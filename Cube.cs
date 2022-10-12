@@ -1,0 +1,7 @@
+class Cube
+{
+    public Cube()
+    {
+
+    }
+}
