@@ -17,34 +17,8 @@ using System.Windows.Threading;
 
 namespace WpfApp1
 {
-    struct Dot
-    {
-        public Dot(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
 
-        public int X { get; }
-        public int Y { get; }
-    }
-    class PixelDraw
-    {
-        public PixelDraw(Dot dot, HsvaColor color)
-        {
-            X = dot.X;
-            Y = dot.Y;
-            H = color.Hue;
 
-        }
-
-        public int X { get; }
-        public int Y { get; }
-        public float H { get; }
-        public float S { get; }
-        public float V { get; }
-        public float A { get; }
-    }
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -70,15 +44,19 @@ namespace WpfApp1
             var redY = 500;
             var blueX = 600;
             var blueY = 500;
+            var greenX = 450;
+            var greenY = 700;
             _bitmap.Lock();
             for (int i = 0; i < _bitmap.PixelWidth; i++)
             {
                 for (int j = 0; j < _bitmap.PixelHeight; j++)
                 {
+
                     var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
-                    var red = ((i - redX) * (i - redX) + (j - redY) * (j - redY)) % 256;
-                    var blue = ((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) % 256;
-                    var color = Color.FromRgb((byte)red, 0, (byte)blue);
+                    // var red = (byte)(((i - redX) * (i - redX) + (j - redY) * (j - redY)) % 255);
+                    // var blue = (byte)(((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) % 255);
+                    // var green = (byte)(((i - greenX) * (i - greenX) + (j - greenY) * (j - greenY)) % 255);
+                    var color = FromRgb(0, 0, 0);
                     unsafe
                     {
                         *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
@@ -86,7 +64,58 @@ namespace WpfApp1
 
                 }
             }
+            _f++;
+            _bitmap.AddDirtyRect(new(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             _bitmap.Unlock();
+        }
+        private void Tick2(object? sender, EventArgs e)
+        {
+            _bitmap.Lock();
+            var aX = 250;
+            var aY = 500;
+            var bX = 625;
+            var bY = 216;
+            var cX = 625;
+            var cY = 784;
+            for (int k = 0; k < 1000; k++)
+            {
+                var i = 500;
+                var j = 500;
+                var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
+                var dotX = 0;
+                var dotY = 0;
+                switch (new Random().Next(3))
+                {
+                    case 0:
+                        dotX = aX;
+                        dotY = aY;
+                        break;
+                    case 1:
+                        dotX = bX;
+                        dotY = bY;
+                        break;
+                    case 2:
+                        dotX = cX;
+                        dotY = cY;
+                        break;
+                }
+                unsafe
+                {
+                    *((int*)ptr) = 1 >> 16;
+                }
+                i = (i + dotX) / 2;
+                j = (j + dotY) / 2;
+            }
+            _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+            _bitmap.Unlock();
+        }
+        public Color FromRgb(int r, int g, int b)
+        {
+            return Color.FromRgb((byte)(r % 256), (byte)(g % 256), (byte)(b % 256));
+        }
+        public void GraphicRedactor(object? sender, EventArgs e)
+        {
+
         }
     }
 }
