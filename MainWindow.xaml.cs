@@ -53,27 +53,32 @@ namespace WpfApp1
         private readonly DispatcherTimer _timer = new();
         private readonly WriteableBitmap _bitmap;
         private readonly Random _rng = new();
-        private int _f;
+        private byte _f;
 
         public MainWindow()
         {
             InitializeComponent();
-            _bitmap = new(400, 400, 96, 100, PixelFormats.Bgr32, null);
+            _bitmap = new(1000, 1000, 96, 100, PixelFormats.Bgr32, null);
             image.Source = _bitmap;
             _timer.Interval = TimeSpan.FromSeconds(0.00001);
             _timer.Tick += Tick;
             _timer.Start();
         }
-        private void PixelsDraw(HsvaColor[,] hsvaColors)
+        private void Tick(object? sender, EventArgs e)
         {
+            var redX = 300;
+            var redY = 500;
+            var blueX = 600;
+            var blueY = 500;
             _bitmap.Lock();
             for (int i = 0; i < _bitmap.PixelWidth; i++)
             {
                 for (int j = 0; j < _bitmap.PixelHeight; j++)
                 {
-                    HsvaColor? item = hsvaColors[i, j];
                     var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
-                    var color = item.ToRgba();
+                    var red = ((i - redX) * (i - redX) + (j - redY) * (j - redY)) % 256;
+                    var blue = ((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) % 256;
+                    var color = Color.FromRgb((byte)red, 0, (byte)blue);
                     unsafe
                     {
                         *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
@@ -82,40 +87,6 @@ namespace WpfApp1
                 }
             }
             _bitmap.Unlock();
-        }
-        private void Tick(object? sender, EventArgs e)
-        {
-            try
-            {
-                _bitmap.Lock();
-                for (int i = 0; i < 100; i++)
-                {
-                    var x = _rng.Next(_bitmap.PixelWidth);
-                    var y = _rng.Next(_bitmap.PixelHeight);
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    var (r, g, b) = ((byte)_f, (byte)0, (byte)_f);
-                    var hsv = new MyColor(r, g, b).ToHsva();
-                    
-                    unsafe
-                    {
-                        *((int*)ptr) = (hsv.R << 16) | (hsv.G << 8) | hsv.B;
-                    }
-
-                    _bitmap.AddDirtyRect(new(x, y, 1, 1));
-                }
-            }
-            finally
-            {
-                _bitmap.Unlock();
-            }
-            _f += 20;
-        }
-        private static void Tick2(object? sender, EventArgs e)
-        {
-            var width = 100;
-            var height = 100;
-            var x = 0;
-            var y = 0;
         }
     }
 }
