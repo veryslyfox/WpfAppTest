@@ -31,6 +31,7 @@ namespace WpfApp1
 
         public MainWindow()
         {
+            
             InitializeComponent();
             _bitmap = new(1000, 1000, 96, 100, PixelFormats.Bgr32, null);
             image.Source = _bitmap;
@@ -40,10 +41,16 @@ namespace WpfApp1
         }
         private void Tick(object? sender, EventArgs e)
         {
-            var redX = 300;
-            var redY = 500;
-            var blueX = 600;
-            var blueY = 500;
+            // var redX = _f;
+            // var redY = _f;
+            // var blueX = 1000 - _f;
+            // var blueY = 1000 - _f;
+            // var greenX = _f;
+            // var greenY = 1000 - _f;
+            var redX = 500;
+            var redY = 300;
+            var blueX = 500;
+            var blueY = 600;
             var greenX = 450;
             var greenY = 700;
             _bitmap.Lock();
@@ -51,20 +58,23 @@ namespace WpfApp1
             {
                 for (int j = 0; j < _bitmap.PixelHeight; j++)
                 {
-
-                    var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
-                    // var red = (byte)(((i - redX) * (i - redX) + (j - redY) * (j - redY)) % 255);
-                    // var blue = (byte)(((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) % 255);
-                    // var green = (byte)(((i - greenX) * (i - greenX) + (j - greenY) * (j - greenY)) % 255);
-                    var color = FromRgb(0, 0, 0);
+                    var i2 = i / 5;
+                    var j2 = j / 5;
+                    var ptr = _bitmap.BackBuffer + i2 * 4 + _bitmap.BackBufferStride * j2;
+                    var red = (byte)(((i2 - redX) * (i2 - redX) + (j2 - redY) * (j2 - redY)) % 255);
+                    var blue = (byte)(((i2 - blueX) * (i2 - blueX) + (j2 - blueY) * (j2 - blueY)) % 255);
+                    var green = (byte)(((i2 - greenX) * (i2 - greenX) + (j2 - greenY) * (j2 - greenY)) % 255);
+                    // var red = Math.Abs(i - redX) + Math.Abs(j - redY);
+                    // var blue = Math.Abs(i - blueX) + Math.Abs(j - blueY);
+                    // var green = Math.Abs(i - greenX) + Math.Abs(j - greenY);
+                    var color = FromRgb(red / 5, 0, blue / 5);
                     unsafe
                     {
                         *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
                     }
-
+                    _f++;
                 }
             }
-            _f++;
             _bitmap.AddDirtyRect(new(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             _bitmap.Unlock();
         }
@@ -101,7 +111,7 @@ namespace WpfApp1
                 }
                 unsafe
                 {
-                    *((int*)ptr) = 1 >> 16;
+                    *((int*)ptr) = 63564;
                 }
                 i = (i + dotX) / 2;
                 j = (j + dotY) / 2;
@@ -109,13 +119,17 @@ namespace WpfApp1
             _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             _bitmap.Unlock();
         }
-        public Color FromRgb(int r, int g, int b)
+        public Color FromRgb(int r, int g, int b, bool isMonoChromed = false)
         {
-            return Color.FromRgb((byte)(r % 256), (byte)(g % 256), (byte)(b % 256));
-        }
-        public void GraphicRedactor(object? sender, EventArgs e)
-        {
-
+            if (!isMonoChromed)
+            {
+                return Color.FromRgb((byte)(r % 256), (byte)(g % 256), (byte)(b % 256));
+            }
+            else
+            {
+                var color = (r + g + b) % 256;
+                return FromRgb(color, color, color);
+            }
         }
     }
 }
