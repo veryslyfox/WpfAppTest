@@ -1,5 +1,6 @@
-﻿using static System.Math;
-using System;
+﻿global using System.Windows.Media;
+global using System;
+using static System.Math;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,12 +10,10 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-
 namespace WpfApp1
 {
 
@@ -27,11 +26,11 @@ namespace WpfApp1
         private readonly DispatcherTimer _timer = new();
         private readonly WriteableBitmap _bitmap;
         private readonly Random _rng = new();
+        private Dot[,] _dots = new Dot[100, 100];
         private byte _f;
-
         public MainWindow()
         {
-            
+
             InitializeComponent();
             _bitmap = new(1000, 1000, 96, 100, PixelFormats.Bgr32, null);
             image.Source = _bitmap;
@@ -54,24 +53,32 @@ namespace WpfApp1
             var greenX = 450;
             var greenY = 700;
             _bitmap.Lock();
-            for (int i = 0; i < _bitmap.PixelWidth; i++)
+
+            for (int i = 0; i < _bitmap.PixelHeight; i++)
             {
-                for (int j = 0; j < _bitmap.PixelHeight; j++)
+                for (int j = 0; j < _bitmap.PixelWidth; j++)
                 {
-                    var i2 = i / 5;
-                    var j2 = j / 5;
-                    var ptr = _bitmap.BackBuffer + i2 * 4 + _bitmap.BackBufferStride * j2;
-                    var red = (byte)(((i2 - redX) * (i2 - redX) + (j2 - redY) * (j2 - redY)) % 255);
-                    var blue = (byte)(((i2 - blueX) * (i2 - blueX) + (j2 - blueY) * (j2 - blueY)) % 255);
-                    var green = (byte)(((i2 - greenX) * (i2 - greenX) + (j2 - greenY) * (j2 - greenY)) % 255);
+                    var ptr = _bitmap.BackBuffer + j * 4 + _bitmap.BackBufferStride * i;
+                    var red = (byte)(((i - redX) * (i - redX) + (j - redY) * (j - redY)) & 255);
+                    var blue = (byte)(((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) & 255);
+                    var green = (byte)(((i - greenX) * (i - greenX) + (j - greenY) * (j - greenY)) & 255);
                     // var red = Math.Abs(i - redX) + Math.Abs(j - redY);
                     // var blue = Math.Abs(i - blueX) + Math.Abs(j - blueY);
                     // var green = Math.Abs(i - greenX) + Math.Abs(j - greenY);
-                    var color = FromRgb(red / 5, 0, blue / 5);
-                    unsafe
-                    {
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
-                    }
+                    var color = FromRgb(0, 255, 0);
+                    var centerX = 300;
+                    var centerY = 300;
+                    if ((i - centerY) * (i - centerY) + (j - centerX) * (j - centerX) < 200 * 200)
+                        unsafe
+                        {
+                            *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
+                        }
+                    color = FromRgb(255, 255, 255);
+                    if ((j < 400 && j > 200 && i < 320 && i > 280) || (i < 400 && i > 200 && j < 320 && j > 280))
+                        unsafe
+                        {
+                            *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
+                        }
                     _f++;
                 }
             }
@@ -121,15 +128,7 @@ namespace WpfApp1
         }
         public Color FromRgb(int r, int g, int b, bool isMonoChromed = false)
         {
-            if (!isMonoChromed)
-            {
-                return Color.FromRgb((byte)(r % 256), (byte)(g % 256), (byte)(b % 256));
-            }
-            else
-            {
-                var color = (r + g + b) % 256;
-                return FromRgb(color, color, color);
-            }
+            return Color.FromRgb((byte)(r & 255), (byte)(g & 255), (byte)(b & 255));
         }
     }
 }
