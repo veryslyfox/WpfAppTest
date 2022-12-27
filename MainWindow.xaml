@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="MainWindow" Height="1000" Width="1000">
+        Title="MainWindow" Height="800" Width="800">
     <Grid>
-        <Image x:Name="image" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="1000" Height="1000" Stretch="None"/>
+        <Image x:Name="image" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="800" Height="800" Stretch="None"/>
 
     </Grid>
 </Window>
