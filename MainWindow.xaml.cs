@@ -36,11 +36,11 @@ public partial class MainWindow : Window
     private void ProcessLogic()
     {
         var added = 0;
-        while (_particles.Count < 10000 && ++added <= 100)
+        while (_particles.Count < 100000 && ++added <= 100)
         {
             _particles.Add(new() { 
-                Position = new(_rng.Next(_bitmap.PixelWidth), _rng.Next(_bitmap.PixelHeight)), 
-                Velocity = new(_rng.Next(50) - 25, _rng.Next(50) - 25), 
+                Position = new(400, 700), 
+                Velocity = new(_rng.NextDouble() * 20 - 10, -(_rng.NextDouble() * 250 + 10)), 
                 Color = Color.FromRgb((byte)_rng.Next(256), (byte)_rng.Next(256), (byte)_rng.Next(256)),
                 Life = _rng.NextDouble() / 2 + 0.5 });
         }
@@ -51,13 +51,10 @@ public partial class MainWindow : Window
         for (int i = 0; i < _particles.Count; i++)
         {
             var particle = _particles[i];
+            particle.Velocity += new Vector2(40 * step, 9.8 * step);
             particle.Position += particle.Velocity * step;
-            particle.Life -= step / 10;
-            if (particle.Position.X < 0
-                || particle.Position.Y < 0
-                || particle.Position.X >= _bitmap.PixelWidth
-                || particle.Position.Y >= _bitmap.PixelHeight
-                || particle.Life < 0)
+            particle.Life -= step / 100;
+            if (particle.Life < 0)
             {
                 _particles.RemoveAt(i--);
             }
@@ -91,9 +88,9 @@ public partial class MainWindow : Window
         unsafe
         {
             var pixelPtr = (int*)ptr;
-            *pixelPtr = (Saturate(color.R + (*pixelPtr >> 16) & 255) << 16) 
-                | (Saturate(color.G + (*pixelPtr >> 8) & 255) << 8)
-                | Saturate(color.B + *pixelPtr & 255);
+            *pixelPtr = (Saturate(color.R + ((*pixelPtr >> 16) & 255)) << 16) 
+                | (Saturate(color.G + ((*pixelPtr >> 8) & 255)) << 8)
+                | Saturate(color.B + (*pixelPtr & 255));
         }
     }
 
