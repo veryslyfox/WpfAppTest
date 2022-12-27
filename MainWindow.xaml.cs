@@ -54,35 +54,39 @@ namespace WpfApp1
             var greenY = 700;
             _bitmap.Lock();
 
-            for (int i = 0; i < _bitmap.PixelHeight; i++)
+            for (int i = 0; i < _bitmap.PixelWidth; i++)
             {
-                for (int j = 0; j < _bitmap.PixelWidth; j++)
+                for (int j = 0; j < _bitmap.PixelHeight; j++)
                 {
-                    var ptr = _bitmap.BackBuffer + j * 4 + _bitmap.BackBufferStride * i;
+                    var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
                     var red = (byte)(((i - redX) * (i - redX) + (j - redY) * (j - redY)) & 255);
                     var blue = (byte)(((i - blueX) * (i - blueX) + (j - blueY) * (j - blueY)) & 255);
                     var green = (byte)(((i - greenX) * (i - greenX) + (j - greenY) * (j - greenY)) & 255);
-                    // var red = Math.Abs(i - redX) + Math.Abs(j - redY);
-                    // var blue = Math.Abs(i - blueX) + Math.Abs(j - blueY);
-                    // var green = Math.Abs(i - greenX) + Math.Abs(j - greenY);
-                    var color = FromRgb(0, 255, 0);
-                    var centerX = 300;
-                    var centerY = 300;
-                    if ((i - centerY) * (i - centerY) + (j - centerX) * (j - centerX) < 200 * 200)
-                        unsafe
-                        {
-                            *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
-                        }
-                    color = FromRgb(255, 255, 255);
-                    if ((j < 400 && j > 200 && i < 320 && i > 280) || (i < 400 && i > 200 && j < 320 && j > 280))
-                        unsafe
-                        {
-                            *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
-                        }
-                    _f++;
+                    var color = FromRgb(red, red, red);
+                    unsafe
+                    {
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
+                    }
                 }
             }
+            _f++;
             _bitmap.AddDirtyRect(new(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+            _bitmap.Unlock();
+        }
+        private void DrawRect(int x, int y, int height, int width, Color color)
+        {
+            _bitmap.Lock();
+            for (int i = x; i < x + height; i++)
+            {
+                for (int j = y; j < y + width; j++)
+                {
+                    var ptr = _bitmap.BackBuffer + i * 4 + _bitmap.BackBufferStride * j;
+                    unsafe
+                    {
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | color.B;
+                    }
+                }
+            }
             _bitmap.Unlock();
         }
         private void Tick2(object? sender, EventArgs e)
@@ -118,7 +122,7 @@ namespace WpfApp1
                 }
                 unsafe
                 {
-                    *((int*)ptr) = 63564;
+                    *((int*)ptr) = 1 << 16;
                 }
                 i = (i + dotX) / 2;
                 j = (j + dotY) / 2;
