@@ -2,8 +2,19 @@ using System.Windows.Media;
 
 namespace WpfApp1;
 
-internal sealed class Particle
+public sealed class Particle
 {
+    public Particle()
+    {
+        
+    }
+    public Particle(Vector2 position, Vector2 velocity, Color color, double life)
+    {
+        Position = position;
+        Velocity = velocity;
+        Color = color;
+        Life = life;
+    }
     public Vector2 Position { get; set; }
 
     public Vector2 Velocity { get; set; }
@@ -13,7 +24,7 @@ internal sealed class Particle
     public double Life { get; set; }
 }
 
-internal struct Vector2
+public struct Vector2
 {
     public Vector2(double x, double y)
     {
