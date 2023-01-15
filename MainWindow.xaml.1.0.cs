@@ -72,8 +72,7 @@ public partial class MainWindow : Window
         // _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelWidth));
         // _bitmap.Unlock();
         var shape = new Shape(FromRgb(255, 255, 255), (0, 0), (0, 100), (100, 100), (100, 0));
-        
-        
+        shape.Render();
     }
 
     private byte Saturate(int value)
