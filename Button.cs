@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace Objects
 {
-    class Button
+    class Button : IPixelMap
     {
         public Button(Int32Rect rect, Color color)
         {
@@ -21,10 +21,16 @@ namespace Objects
             Width = rect.Width;
             Height = rect.Height;
         }
-        public bool OnPoint(int x, int y)
+        public bool IsColored(int x, int y)
         {
             return !(x < X || x > X + Height || y < Y || y > Y + Width);
         }
+
+        public Color GetColor(int x, int y)
+        {
+            return Color;
+        }
+
         public int X { get; private set; }
         public int Y { get; private set; }
         public int Width { get; private set; }

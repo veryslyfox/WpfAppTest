@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Windows.Input;
 using Button = Objects.Button;
+using Objects;
+
 namespace WpfApp1;
 
 public partial class MainWindow : Window
@@ -26,23 +28,23 @@ public partial class MainWindow : Window
         _buttons.Add(new Button(new Int32Rect(0, 0, 800, 800)));
         _timer.Interval = TimeSpan.FromSeconds(0.00001);
         _timer.Tick += Tick;
-        this.MouseLeftButtonUp += ButtonHandler;
+        IPixelMap.Bitmap = _bitmap;
         _timer.Start();
     }
 
-    private void ButtonHandler(object sender, MouseEventArgs args)
-    {
-        var position = args.GetPosition(this);
-        int x = (int)position.X;
-        int y = (int)position.Y;
-        foreach (var button in _buttons)
-        {
-            if (button.OnPoint(x, y))
-            {
-                _color = FromRgb(x, 0, y);
-            }
-        }
-    }
+    // private void ButtonHandler(object sender, MouseEventArgs args)
+    // {
+    //     var position = args.GetPosition(this);
+    //     int x = (int)position.X;
+    //     int y = (int)position.Y;
+    //     foreach (var button in _buttons)
+    //     {
+    //         if (button.OnPoint(x, y))
+    //         {
+    //             _color = FromRgb(x, 0, y);
+    //         }
+    //     }
+    // }
 
     private Color FromRgb(int r, int g, int b)
     {
@@ -51,24 +53,27 @@ public partial class MainWindow : Window
 
     private void Tick(object? sender, EventArgs e)
     {
-        _bitmap.Lock();
-        var color = _color;
-        foreach (var item in _buttons)
-        {
-            for (int y = 0; y < _bitmap.PixelHeight; y++)
-            {
-                for (int x = 0; x < _bitmap.PixelWidth; x++)
-                {
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    unsafe
-                    {
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-                    }
-                }
-            }
-        }
-        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelWidth));
-        _bitmap.Unlock();
+        // _bitmap.Lock();
+        // var color = _color;
+        // foreach (var item in _buttons)
+        // {
+        //     for (int y = 0; y < _bitmap.PixelHeight; y++)
+        //     {
+        //         for (int x = 0; x < _bitmap.PixelWidth; x++)
+        //         {
+        //             var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+        //             unsafe
+        //             {
+        //                 *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+        //             }
+        //         }
+        //     }
+        // }
+        // _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelWidth));
+        // _bitmap.Unlock();
+        var shape = new Shape(FromRgb(255, 255, 255), (0, 0), (0, 100), (100, 100), (100, 0));
+        
+        
     }
 
     private byte Saturate(int value)
