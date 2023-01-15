@@ -1,13 +1,13 @@
 using System;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+global using System.Linq
 namespace Objects
 {
         static class Rendering
         {
-            public static void Render(this IPixelMap pixelMap)
+            public static void Render(this IPixelMap pixelMap, WriteableBitmap _bitmap)
             {
-                var _bitmap = IPixelMap.Bitmap;
                 _bitmap.Lock();
                 for (int y = 0; y < _bitmap.PixelHeight; y++)
                 {
@@ -27,7 +27,6 @@ namespace Objects
 
         public interface IPixelMap
         {
-            static WriteableBitmap Bitmap { get; set; }
             bool IsColored(int x, int y);
             Color GetColor(int x, int y);
         }
@@ -44,6 +43,7 @@ namespace Objects
         public bool IsColored(int x, int y)
         {
             var shape = new Vector[Points.Length];
+            
             for (int i = 0; i < shape.Length - 1; i++)
             {
                 shape[i] = new(Points[i].Item1, Points[i].Item2, Points[i + 1].Item1, Points[i + 1].Item2);
