@@ -1,17 +1,20 @@
+global using System.Linq;
 using System;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-global using System.Linq
 namespace Objects
 {
-        static class Rendering
+    static class Rendering
+    {
+        public static void Render(this IPixelMap pixelMap, WriteableBitmap _bitmap)
         {
-            public static void Render(this IPixelMap pixelMap, WriteableBitmap _bitmap)
+            _bitmap.Lock();
+            for (int y = 0; y < _bitmap.PixelHeight; y++)
             {
-                _bitmap.Lock();
-                for (int y = 0; y < _bitmap.PixelHeight; y++)
+                for (int x = 0; x < _bitmap.PixelWidth; x++)
                 {
-                    for (int x = 0; x < _bitmap.PixelWidth; x++)
+                    if (pixelMap.IsColored(x, y))
                     {
                         var color = pixelMap.GetColor(x, y);
                         var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
@@ -21,15 +24,17 @@ namespace Objects
                         }
                     }
                 }
-                _bitmap.Unlock();
             }
+            _bitmap.AddDirtyRect(new System.Windows.Int32Rect(0, 0, (int)_bitmap.Width, (int)_bitmap.Height));
+            _bitmap.Unlock();
         }
+    }
 
-        public interface IPixelMap
-        {
-            bool IsColored(int x, int y);
-            Color GetColor(int x, int y);
-        }
+    public interface IPixelMap
+    {
+        bool IsColored(int x, int y);
+        Color GetColor(int x, int y);
+    }
     class Shape : IPixelMap
     {
         public Shape(Color color, params (int, int)[] points)
@@ -43,7 +48,7 @@ namespace Objects
         public bool IsColored(int x, int y)
         {
             var shape = new Vector[Points.Length];
-            
+
             for (int i = 0; i < shape.Length - 1; i++)
             {
                 shape[i] = new(Points[i].Item1, Points[i].Item2, Points[i + 1].Item1, Points[i + 1].Item2);
@@ -54,7 +59,7 @@ namespace Objects
         public Color GetColor(int x, int y)
         {
             return Color;
-        } 
+        }
     }
     struct Vector
     {
@@ -65,16 +70,27 @@ namespace Objects
             X2 = x2;
             Y2 = y2;
         }
-
+        public Vector(Point begin, Point end)
+        {
+            X1 = ((int)begin.X);
+            X2 = ((int)end.X);
+            Y1 = ((int)begin.Y);
+            Y2 = ((int)end.Y);
+        }
         public int X1 { get; }
         public int Y1 { get; }
         public int X2 { get; }
         public int Y2 { get; }
-        public double Angle { get => Math.Atan2(Y2 - Y1, X2 - X1); }
         public bool DotRight(int x, int y)
         {
-            var angle = Math.Atan2(y - Y1, x - X1);
-            return (angle > Angle) && (angle < Angle + 180);
+            if(X1 == X2)
+            {
+                return Math.Sign(x) > 0;
+            }   
+            Point point1 = new Point(X2 - X1, Y2 - Y1);
+            Point point2 = new Point(x - X1, y - Y1);
+            return point1.X / point1.Y < point2.X / point2.Y;
         }
+        
     }
 }

@@ -25,11 +25,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
-        _buttons.Add(new Button(new Int32Rect(0, 0, 800, 800)));
         _timer.Interval = TimeSpan.FromSeconds(0.00001);
         _timer.Tick += Tick;
-        IPixelMap.Bitmap = _bitmap;
         _timer.Start();
+        
     }
 
     // private void ButtonHandler(object sender, MouseEventArgs args)
@@ -53,26 +52,28 @@ public partial class MainWindow : Window
 
     private void Tick(object? sender, EventArgs e)
     {
-        // _bitmap.Lock();
-        // var color = _color;
-        // foreach (var item in _buttons)
-        // {
-        //     for (int y = 0; y < _bitmap.PixelHeight; y++)
-        //     {
-        //         for (int x = 0; x < _bitmap.PixelWidth; x++)
-        //         {
-        //             var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-        //             unsafe
-        //             {
-        //                 *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-        //             }
-        //         }
-        //     }
-        // }
-        // _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelWidth));
-        // _bitmap.Unlock();
-        var shape = new Shape(FromRgb(255, 255, 255), (0, 0), (0, 100), (100, 100), (100, 0));
-        shape.Render();
+        _bitmap.Lock();
+        var color = FromRgb(255, 255, 255);
+        var vector = new Objects.Vector(0, 0, 200, 200);
+        foreach (var item in _buttons)
+        {
+            for (int y = 0; y < _bitmap.PixelHeight; y++)
+            {
+                for (int x = 0; x < _bitmap.PixelWidth; x++)
+                {
+                    if (vector.DotRight(x, y))
+                    {
+                        var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                        unsafe
+                        {
+                            *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                        }
+                    }
+                }
+            }
+        }
+        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelWidth));
+        _bitmap.Unlock();
     }
 
     private byte Saturate(int value)
