@@ -29,7 +29,17 @@ namespace Objects
             _bitmap.Unlock();
         }
     }
+    struct Pixel
+    {
+        public Pixel(Point point, Color color)
+        {
+            Point = point;
+            Color = color;
+        }
 
+        public Point Point { get; }
+        public Color Color { get; }
+    }
     public interface IPixelMap
     {
         bool IsColored(int x, int y);
@@ -83,14 +93,14 @@ namespace Objects
         public int Y2 { get; }
         public bool DotRight(int x, int y)
         {
-            if(X1 == X2)
+            if (X1 == X2)
             {
                 return Math.Sign(x) > 0;
-            }   
+            }
             Point point1 = new Point(X2 - X1, Y2 - Y1);
             Point point2 = new Point(x - X1, y - Y1);
             return point1.X / point1.Y < point2.X / point2.Y;
         }
-        
+
     }
 }
