@@ -9,6 +9,8 @@ using System.Windows.Input;
 using Button = Objects.Button;
 using Objects;
 using Objects.SpecialMath;
+using Objects.Data;
+using Style = Objects.Data.Style;
 
 namespace WpfApp1;
 
@@ -21,7 +23,10 @@ public partial class MainWindow : Window
     private double _time;
     private List<Button> _buttons = new List<Button>();
     private Color _color;
-    private byte _f;
+    private int _f;
+    private byte _hue;
+    private byte _saturation;
+    private byte _value;
     public MainWindow()
     {
         InitializeComponent();
@@ -38,6 +43,7 @@ public partial class MainWindow : Window
         var position = args.GetPosition(this);
         int x = (int)position.X;
         int y = (int)position.Y;
+        _f += 10;
     }
 
     private Color FromRgb(int r, int g, int b)
@@ -51,16 +57,21 @@ public partial class MainWindow : Window
 
     private void Tick(object? sender, EventArgs e)
     {
+        BinaryMap map = new BinaryMap(new Style(20, 20, FromRgb(255, 255, 255)), 40, 40);
+        map.OnRandom(0.001);
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = SpecialMath.ToRgb(255, 128, 255);
-                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                unsafe
+                if (map.Map[x / 20, y / 40])
                 {
-                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    var color = FromRgb(255, 255, 255);
+                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                    unsafe
+                    {
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    }
                 }
             }
         }

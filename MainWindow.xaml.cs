@@ -19,11 +19,13 @@
 //     private List<Button> _buttons = new List<Button>();
 //     private static Vector2[] Centers = new Vector2[]
 //     {
-//         new(100, 700),
-//         new(150, 700),
-//         new(200, 700),
+//         new(300, 700),
+//         new(400, 700),
+//         new(500, 700),
 //     };
 //     private double _time;
+//     private double _left = 1;
+//     private byte _f;
 
 //     public MainWindow()
 //     {
@@ -34,6 +36,7 @@
 //         _timer.Tick += Tick;
 //         _timer.Start();
 //         _time = Stopwatch.GetTimestamp() * TimeStep;
+//         MouseLeftButtonDown += ButtonHandler;
 //     }
 
 //     private void Tick(object? sender, EventArgs e)
@@ -46,13 +49,7 @@
 //         var position = args.GetPosition(this);
 //         int x = (int)position.X;
 //         int y = (int)position.Y;
-//         foreach (var button in _buttons)
-//         {
-//             if (button.OnPoint(x, y))
-//             {
-//                 _color = FromRgb(x, 0, y);
-//             }
-//         }
+//         _left = -_left;
 //     }
 //     private void ProcessLogic()
 //     {
@@ -70,11 +67,10 @@
 //         var time = Stopwatch.GetTimestamp() * TimeStep;
 //         var step = time - _time;
 //         _time = time;
-
 //         for (int i = 0; i < _particles.Count; i++)
 //         {
 //             var particle = _particles[i];
-//             particle.Velocity += new Vector2(40 * step, 98 * step);
+//             particle.Velocity += new Vector2(98 * step, 98 * step);
 //             particle.Position += particle.Velocity * step;
 //             particle.Life -= step / 100;
 //             if (particle.Life < 0)

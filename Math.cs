@@ -46,7 +46,7 @@ static class SpecialMath
     public static Color ToRgb(byte hue, byte saturation, byte value)
     {
         if (value == 0)
-        {   
+        {
             return new Color();
         }
         var d = 221.702;
@@ -54,10 +54,23 @@ static class SpecialMath
         var pointG = new Point(-128, d);
         var pointB = new Point(128, d);
         var point = PolarToXY(new Point(saturation, hue));
-        var r = Distance(point, pointR);
-        var g = Distance(point, pointG);
-        var b = Distance(point, pointB);
+        var r = 256 - Distance(point, pointR);
+        var g = 256 - Distance(point, pointG);
+        var b = 256 - Distance(point, pointB);
         var value2 = (byte)(value / Max(r, Max(g, b)));
+        return Color.FromRgb(((byte)(value2 * ((byte)r))), ((byte)(value2 * ((byte)g))), ((byte)(value2 * ((byte)b))));
+    }
+    public static Color ToRgb(int x, int y)
+    {
+        var d = 221.702;
+        var pointR = new Point(0, 0);
+        var pointG = new Point(-128, d);
+        var pointB = new Point(128, d);
+        var point = new Point(x, y);
+        var r = 256 - Distance(point, pointR);
+        var g = 256 - Distance(point, pointG);
+        var b = 256 - Distance(point, pointB);
+        var value2 = (byte)(255 / Max(r, Max(g, b)));
         return Color.FromRgb(((byte)(value2 * ((byte)r))), ((byte)(value2 * ((byte)g))), ((byte)(value2 * ((byte)b))));
     }
 }
