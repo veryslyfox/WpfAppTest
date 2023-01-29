@@ -43,6 +43,7 @@ static class SpecialMath
         var y = end.Y - begin.Y;
         return Math.Sqrt(x * x + y * y);
     }
+    
     public static Color ToRgb(byte hue, byte saturation, byte value)
     {
         if (value == 0)
@@ -60,9 +61,9 @@ static class SpecialMath
         var value2 = (byte)(value / Max(r, Max(g, b)));
         return Color.FromRgb(((byte)(value2 * ((byte)r))), ((byte)(value2 * ((byte)g))), ((byte)(value2 * ((byte)b))));
     }
-    public static Color ToRgb(int x, int y)
+    public static Color ToRgb(int x, int y, int f)
     {
-        var d = 221.702;
+        var d = f;
         var pointR = new Point(0, 0);
         var pointG = new Point(-128, d);
         var pointB = new Point(128, d);
@@ -76,7 +77,7 @@ static class SpecialMath
 }
 class Matrix3
 {
-    public Matrix3(int m11, int m12, int m13, int m21, int m22, int m23, int m31, int m32, int m33)
+    public Matrix3(double m11, double m12, double m13, double m21, double m22, double m23, double m31, double m32, double m33)
     {
         M11 = m11;
         M12 = m12;
@@ -89,17 +90,17 @@ class Matrix3
         M33 = m33;
     }
 
-    public int M11 { get; }
-    public int M12 { get; }
-    public int M13 { get; }
-    public int M21 { get; }
-    public int M22 { get; }
-    public int M23 { get; }
-    public int M31 { get; }
-    public int M32 { get; }
-    public int M33 { get; }
-    /*
-    public static Matrix RollMatrix(double α, double β, double γ)
+    public double M11 { get; }
+    public double M12 { get; }
+    public double M13 { get; }
+    public double M21 { get; }
+    public double M22 { get; }
+    public double M23 { get; }
+    public double M31 { get; }
+    public double M32 { get; }
+    public double M33 { get; }
+
+    public static Matrix3 RollMatrix(double α, double β, double γ)
     {
         var a = α;
         var b = β;
@@ -114,7 +115,11 @@ class Matrix3
         var m12 = -yc * asin - ac * bc * ys;
         var m13 = bs * ys;
         var m21 = bc * yc * asin + ac * ys;
-          
+        var m22 = ac * bc * yc - asin * ys;
+        var m23 = -yc * bs;
+        var m31 = asin * bs;
+        var m32 = ac * bs;
+        var m33 = bc;
+        return new Matrix3(m11, m12, m13, m21, m22, m23, m31, m32, m33); 
     }
-    */
 }

@@ -3,6 +3,8 @@ using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Objects.Data;
+
 namespace Objects
 {
     static class Rendering
@@ -25,8 +27,12 @@ namespace Objects
                     }
                 }
             }
-            _bitmap.AddDirtyRect(new System.Windows.Int32Rect(0, 0, (int)_bitmap.Width, (int)_bitmap.Height));
+            _bitmap.AddDirtyRect(new System.Windows.Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             _bitmap.Unlock();
+        }
+        public static void Render(Bitmap map, WriteableBitmap bitmap)
+        {
+
         }
     }
     struct Pixel
@@ -71,7 +77,7 @@ namespace Objects
             return Color;
         }
     }
-    struct Vector
+    class Vector
     {
         public Vector(int x1, int y1, int x2, int y2)
         {
@@ -86,20 +92,26 @@ namespace Objects
             X2 = ((int)end.X);
             Y1 = ((int)begin.Y);
             Y2 = ((int)end.Y);
+            Begin = begin;
+            End = end;
         }
         public int X1 { get; }
         public int Y1 { get; }
         public int X2 { get; }
         public int Y2 { get; }
+        public Point Begin { get; }
+        public Point End { get; }
+        public static double Atan(Point point)
+        {
+            return Math.Atan2(point.Y, point.X);
+        }
         public bool DotRight(int x, int y)
         {
-            if (X1 == X2)
-            {
-                return Math.Sign(x) > 0;
-            }
-            Point point1 = new Point(X2 - X1, Y2 - Y1);
-            Point point2 = new Point(x - X1, y - Y1);
-            return point1.X / point1.Y < point2.X / point2.Y;
+            var point = new Point(x, y);
+            var vector = (System.Windows.Vector)Begin;
+            var e = End - vector;
+            var p = point - vector;
+            return Atan(p) > Atan(e);
         }
 
     }
