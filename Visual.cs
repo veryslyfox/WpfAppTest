@@ -16,9 +16,9 @@ namespace Objects
             {
                 for (int x = 0; x < _bitmap.PixelWidth; x++)
                 {
-                    if (pixelMap.IsColored(x, y))
+                    if (pixelMap.IsColored(new Point(x, y)))
                     {
-                        var color = pixelMap.GetColor(x, y);
+                        var color = pixelMap.GetColor(new Point(x, y));
                         var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                         unsafe
                         {
@@ -48,8 +48,8 @@ namespace Objects
     }
     public interface IPixelMap
     {
-        bool IsColored(int x, int y);
-        Color GetColor(int x, int y);
+        bool IsColored(Point point);
+        Color GetColor(Point point);
     }
     class Shape : IPixelMap
     {
@@ -61,7 +61,7 @@ namespace Objects
         public (int, int)[] Points { get; }
         public Color Color { get; }
 
-        public bool IsColored(int x, int y)
+        public bool IsColored(Point point)
         {
             var shape = new Vector[Points.Length];
 
@@ -70,9 +70,9 @@ namespace Objects
                 shape[i] = new(Points[i].Item1, Points[i].Item2, Points[i + 1].Item1, Points[i + 1].Item2);
             }
             shape[shape.Length - 1] = new Vector(Points[shape.Length - 1].Item1, Points[shape.Length - 1].Item2, Points[0].Item1, Points[0].Item2);
-            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(x, y));
+            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(point));
         }
-        public Color GetColor(int x, int y)
+        public Color GetColor(Point point)
         {
             return Color;
         }
@@ -101,13 +101,13 @@ namespace Objects
         public int Y2 { get; }
         public Point Begin { get; }
         public Point End { get; }
+        public double Gradient { get => (Y2 - Y1) / (X2 - X1); }
         public static double Atan(Point point)
         {
             return Math.Atan2(point.Y, point.X);
         }
-        public bool DotRight(int x, int y)
+        public bool DotRight(Point point)
         {
-            var point = new Point(x, y);
             var vector = (System.Windows.Vector)Begin;
             var e = End - vector;
             var p = point - vector;

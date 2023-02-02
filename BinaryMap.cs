@@ -1,8 +1,9 @@
 using System;
+using System.Windows;
 using System.Windows.Media;
 
 namespace Objects.Data;
-class Bitmap : IPixelMap
+class Bitmap
 {
     public void OnRandom(double prob)
     {
@@ -76,7 +77,7 @@ class Bitmap : IPixelMap
         return Map[x / (Style.CellX + Style.Border), y / (Style.CellY + Style.Border)];
     }
 
-    public Color GetColor(int x, int y)
+    public Color GetColor(Point point)
     {
         bool IsBorderedDotX(int value)
         {
@@ -90,7 +91,7 @@ class Bitmap : IPixelMap
         {
             return Style.Color;
         }
-        if (IsBorderedDotX(x) || IsBorderedDotY(y))
+        if (IsBorderedDotX((int)point.X) || IsBorderedDotY((int)point.Y))
         {
             return Style.BorderColor;
         }

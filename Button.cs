@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace Objects
 {
-    class Button : IPixelMap
+    class Button
     {
         public Button(Int32Rect rect, Color color)
         {

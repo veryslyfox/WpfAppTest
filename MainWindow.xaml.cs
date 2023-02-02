@@ -70,7 +70,7 @@
 //         for (int i = 0; i < _particles.Count; i++)
 //         {
 //             var particle = _particles[i];
-//             particle.Velocity += new Vector2(98 * step, 98 * step);
+//             particle.Velocity += new Vector2(98 * step, 40 * step * _left);
 //             particle.Position += particle.Velocity * step;
 //             particle.Life -= step / 100;
 //             if (particle.Life < 0)
