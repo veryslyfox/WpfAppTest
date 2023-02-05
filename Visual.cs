@@ -108,10 +108,7 @@ namespace Objects
         }
         public bool DotRight(Point point)
         {
-            var vector = (System.Windows.Vector)Begin;
-            var e = End - vector;
-            var p = point - vector;
-            return Atan(p) > Atan(e);
+            return Gradient < new Vector(new Point(0, 0), point).Gradient;
         }
 
     }

@@ -18,9 +18,16 @@ static class SpecialMath
     }
     public static Point Roll(Point point, double angle)
     {
-        var radius = Sqrt(point.X * point.X + point.Y * point.Y);
-        return new Point(radius * Sin(angle), radius * Cos(angle));
+        return point * GetRollMatrix(angle);
     }
+
+    public static Matrix GetRollMatrix(double angle)
+    {
+        var sin = Math.Sin(angle);
+        var cos = Math.Cos(angle);
+        return new Matrix(cos, -sin, sin, cos, 0, 0);
+    }
+
     public static Color Chrome(double hue)
     {
         if (0 < hue && hue < 85)
@@ -122,4 +129,17 @@ class Matrix3
         var m33 = bc;
         return new Matrix3(m11, m12, m13, m21, m22, m23, m31, m32, m33); 
     }
+}
+class Roller
+{
+    public Roller(double angle)
+    {
+        (Sin, Cos) = SinCos(angle);
+    }
+    public int RollX(int x, int y)
+    {
+        return (int)(x * Cos + y * Sin);
+    }
+    public double Sin { get; }
+    public double Cos { get; }
 }

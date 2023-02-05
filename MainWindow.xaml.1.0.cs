@@ -23,11 +23,8 @@ public partial class MainWindow : Window
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
     private double _time;
     private List<Button> _buttons = new List<Button>();
-    private Color _color;
     private int _f;
-    private byte _hue;
-    private byte _saturation;
-    private byte _value;
+    private Roller[] _rollers = new Roller[] { new Roller(0), new Roller(2 * Math.PI / 3), new Roller(4 * Math.PI / 3) };
     private Color[] _labs = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
     private Color? _mouseColor;
     public MainWindow()
@@ -75,7 +72,7 @@ public partial class MainWindow : Window
     {
         var c = cold / 256.0;
         var h = hot / 256.0;
-        var v = value * 3;
+        var v = value;
         var b = (c * v / (c + 2)) * 256;
         var g = ((h * b + 2 * b - 2 * v) / (2 - h)) * 256;
         var r = (v - b - g) * 256;
@@ -111,20 +108,19 @@ public partial class MainWindow : Window
     }
     private void Tick(object? sender, EventArgs e)
     {
-        _bitmap.Lock();
         var vector = new Vector(0, 0, 100, 100);
+        _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                if((x ^ _f) == y)
+                var color = FromRgb(_rollers[0].RollX(x, y), _rollers[1].RollX(x, y), _rollers[2].RollX(x, y));
+
+                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                unsafe
                 {
-                    var color = FromRgb(255, 255, 255);
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    unsafe
-                    {
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-                    }
+
+                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
                 }
             }
         }
