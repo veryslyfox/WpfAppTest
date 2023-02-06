@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using System.IO;
 using System.Windows.Input;
 using Objects.Data;
@@ -717,4 +717,4 @@ partial class MainWindow
             _field[iBegin + i, jBegin] = 1;
         }
     }
-}
+}*/
