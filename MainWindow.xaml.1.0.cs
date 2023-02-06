@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private Roller[] _rollers = new Roller[] { new Roller(0), new Roller(2 * Math.PI / 3), new Roller(4 * Math.PI / 3) };
     private Color[] _labs = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
     private Color? _mouseColor;
+    private int[,] _field = new int[30, 30];
     public MainWindow()
     {
         InitializeComponent();
@@ -108,14 +109,21 @@ public partial class MainWindow : Window
     }
     private void Tick(object? sender, EventArgs e)
     {
-        var vector = new Vector(0, 0, 100, 100);
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = FromRgb(_rollers[0].RollX(x, y), _rollers[1].RollX(x, y), _rollers[2].RollX(x, y));
-
+                Color color;
+                var cell = _field[x / 20, y / 20];
+                if (cell < 0)
+                {
+                    color = FromRgb(255, 0, 0);
+                }
+                if (cell > 0)
+                {
+                    color = FromRgb(0, 255, 0);
+                }
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -128,7 +136,174 @@ public partial class MainWindow : Window
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
         _bitmap.Unlock();
     }
+    private int GetRNeighborCount(int column, int row)
+    {
+        var width = _field.GetLength(0);
+        var height = _field.GetLength(1);
+        var count = 0;
+        if (row > 0 && column > 0 && _field[column - 1, row - 1] < 0)
+        {
+            count++;
+        }
 
+        if (row > 0 && _field[column, row - 1] < 0)
+        {
+            count++;
+        }
+
+        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] < 0)
+        {
+            count++;
+        }
+
+        if (column < width - 1 && _field[column + 1, row] < 0)
+        {
+            count++;
+        }
+
+        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] < 0)
+        {
+            count++;
+        }
+
+        if (row < height - 1 && _field[column, row + 1] < 0)
+        {
+            count++;
+        }
+
+        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] < 0)
+        {
+            count++;
+        }
+
+        if (column > 0 && _field[column - 1, row] < 0)
+        {
+            count++;
+        }
+
+        return count;
+    }
+    private int GetGNeighborCount(int column, int row)
+    {
+        var width = _field.GetLength(0);
+        var height = _field.GetLength(1);
+        var count = 0;
+        if (row > 0 && column > 0 && _field[column - 1, row - 1] > 0)
+        {
+            count++;
+        }
+
+        if (row > 0 && _field[column, row - 1] > 0)
+        {
+            count++;
+        }
+
+        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] > 0)
+        {
+            count++;
+        }
+
+        if (column < width - 1 && _field[column + 1, row] > 0)
+        {
+            count++;
+        }
+
+        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] > 0)
+        {
+            count++;
+        }
+
+        if (row < height - 1 && _field[column, row + 1] > 0)
+        {
+            count++;
+        }
+
+        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] > 0)
+        {
+            count++;
+        }
+
+        if (column > 0 && _field[column - 1, row] > 0)
+        {
+            count++;
+        }
+
+        return count;
+    }
+    private int NeighborhoodActive(int column, int row, Action<int, int> action)
+    {
+        void S(int columnOffset, int rowOffset)
+        {
+            action(column + columnOffset, row + rowOffset);
+        }
+        var width = _field.GetLength(0);
+        var height = _field.GetLength(1);
+        var count = 0;
+        if (row > 0 && column > 0 && _field[column - 1, row - 1] > 0)
+        {
+            S(-1, -1);
+        }
+
+        if (row > 0 && _field[column, row - 1] > 0)
+        {
+            S(0, -1);
+        }
+
+        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] > 0)
+        {
+            S(1, -1);
+        }
+
+        if (column < width - 1 && _field[column + 1, row] > 0)
+        {
+            S(1, 0);
+        }
+
+        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] > 0)
+        {
+            S(1, 1);
+        }
+
+        if (row < height - 1 && _field[column, row + 1] > 0)
+        {
+            S(0, 1);
+        }
+
+        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] > 0)
+        {
+            S(-1, 1);
+        }
+
+        if (column > 0 && _field[column - 1, row] > 0)
+        {
+            S(-1, 0);
+        }
+
+        return count;
+    }
+    private void Next(int column, int row)
+    {
+        var value = _field[column, row];
+        if (value > 0)
+        {
+            _field[column, row]--;
+        }
+        if (value < 0)
+        {
+            NeighborhoodActive(column, row, (int a, int b) => { if (_field[a, b] > 0) { _field[a, b] = 0; _field[column, row]--; } });
+        }
+        if (value == 0)
+        {
+            if (GetRNeighborCount(column, row) > 0)
+            {
+                _field[column, row] = -3;
+            }
+            if (GetGNeighborCount(column, row) > 0)
+            {
+                _field[column, row] = 6;
+            }
+        }
+    }
     private byte Saturate(int value)
     => value >= 0
         ? value <= 255
