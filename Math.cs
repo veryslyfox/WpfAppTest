@@ -2,6 +2,7 @@ namespace Objects.SpecialMath;
 using static System.Math;
 using System.Windows;
 using System;
+using System.Numerics;
 using System.Windows.Media;
 using VolumeObjects;
 static class SpecialMath
@@ -50,7 +51,7 @@ static class SpecialMath
         var y = end.Y - begin.Y;
         return Math.Sqrt(x * x + y * y);
     }
-    
+
     public static Color ToRgb(byte hue, byte saturation, byte value)
     {
         if (value == 0)
@@ -81,6 +82,33 @@ static class SpecialMath
         var value2 = (byte)(255 / Max(r, Max(g, b)));
         return Color.FromRgb(((byte)(value2 * ((byte)r))), ((byte)(value2 * ((byte)g))), ((byte)(value2 * ((byte)b))));
     }
+    public static byte Wave(double x, double y, int n)
+    {
+        var a = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            a += Wave(x, y, i, n);
+        }
+        return (byte)(255 * (n - a));
+    }
+    static double Wave(double x, double y, int k, int n)
+    {
+        var a = k / n * 2 * Math.PI;
+        return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
+    }
+    public static bool IsDotFromMandelbrotSet(int x, int y, int k, double a)
+    {
+        var c = new Complex(x, y);
+        var n = 0;
+        for (int i = 0; i < 30; i++)
+        {
+            if(c.Real < (c * c + a).Real)
+            {
+                n++;
+            }
+        }
+        return n < k;
+    } 
 }
 class Matrix3
 {
@@ -127,8 +155,9 @@ class Matrix3
         var m31 = asin * bs;
         var m32 = ac * bs;
         var m33 = bc;
-        return new Matrix3(m11, m12, m13, m21, m22, m23, m31, m32, m33); 
+        return new Matrix3(m11, m12, m13, m21, m22, m23, m31, m32, m33);
     }
+
 }
 class Roller
 {

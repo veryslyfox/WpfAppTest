@@ -27,13 +27,17 @@ public partial class MainWindow : Window
     private Roller[] _rollers = new Roller[] { new Roller(0), new Roller(2 * Math.PI / 3), new Roller(4 * Math.PI / 3) };
     private Color[] _labs = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
     private Color? _mouseColor;
-    private int[,] _field = new int[30, 30];
+    private Bitmap _map = new Bitmap(new Style(20, 20, Color.FromRgb(255, 255, 255), 5, Color.FromRgb(255, 0, 255)), 40, 40);
+    private int[,] _field = new int[50, 50];
     public MainWindow()
     {
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
         _timer.Interval = TimeSpan.FromSeconds(0.1);
+        _field[0, 0] = 6;
+        _field[40, 40] = -3;
+        _f = 1;
         _timer.Tick += Tick;
         _timer.Start();
         MouseLeftButtonDown += ButtonHandler;
@@ -44,7 +48,7 @@ public partial class MainWindow : Window
         var position = args.GetPosition(this);
         int x = (int)position.X;
         int y = (int)position.Y;
-        _f += 10;
+        _map[x / 25, y / 25] = true;
     }
 
     private Color FromRgb(int r, int g, int b)
@@ -114,25 +118,19 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                Color color;
-                var cell = _field[x / 20, y / 20];
-                if (cell < 0)
+                if (Math.Atan2(y, x) == Math.Sqrt(x * x + y * y))
                 {
-                    color = FromRgb(255, 0, 0);
-                }
-                if (cell > 0)
-                {
-                    color = FromRgb(0, 255, 0);
-                }
-                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                unsafe
-                {
+                    var color = FromRgb(255, 255, 255);
+                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                    unsafe
+                    {
 
-                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    }
                 }
             }
         }
-        _f++;
+        _f += 10;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
         _bitmap.Unlock();
     }
@@ -287,20 +285,24 @@ public partial class MainWindow : Window
         if (value > 0)
         {
             _field[column, row]--;
+            return;
         }
         if (value < 0)
         {
             NeighborhoodActive(column, row, (int a, int b) => { if (_field[a, b] > 0) { _field[a, b] = 0; _field[column, row]--; } });
+            return;
         }
         if (value == 0)
         {
             if (GetRNeighborCount(column, row) > 0)
             {
                 _field[column, row] = -3;
+                return;
             }
             if (GetGNeighborCount(column, row) > 0)
             {
                 _field[column, row] = 6;
+                return;
             }
         }
     }
