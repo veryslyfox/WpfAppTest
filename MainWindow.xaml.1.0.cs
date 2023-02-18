@@ -51,7 +51,9 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = HsvToRgb((int)(Atan2(y, x) / PI * 720), (byte)(Sqrt(x * x + y * y) / 12), 255);
+                var a = x - 400;
+                var b = y - 400;
+                var color = HsvToRgb((int)(Atan2(b, a) / PI * 100), (byte)(Sqrt(b * b + a * a) / 6), 255);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
