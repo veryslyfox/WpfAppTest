@@ -43,27 +43,20 @@ public partial class MainWindow : Window
         MouseLeftButtonDown += ButtonHandler;
     }
 
-    
+
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
-        for (int i = 0; i < 100; i++)
-        {
-            _norm[New(400, 500)]++;
-        }
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                if (800 - y < _norm[x])
+                var color = HsvToRgb((int)(Atan2(y, x) / PI * 720), (byte)(Sqrt(x * x + y * y) / 12), 255);
+                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                unsafe
                 {
-                    var color = FromRgb(255, 255, 255);
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    unsafe
-                    {
 
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-                    }
+                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
                 }
             }
         }
@@ -115,7 +108,7 @@ public partial class MainWindow : Window
     {
         return FromRgb((a.R * c + b.R * (255 - c)) / 255, (a.G * c + b.G * (255 - c)) / 255, (a.B * c + b.B * (255 - c)) / 255);
     }
-    public Color HueToRgb(int h, byte s, byte v)
+    public Color HsvToRgb(int h, byte s, byte v)
     {
         var result = new Color();
         var hue = h % 360;
@@ -139,12 +132,12 @@ public partial class MainWindow : Window
         DoubleInterval(300, 360, d, a, c);
         return Interpolation(result, Color.FromRgb(v, v, v), s);
     }
-    public int New(int mean, int disperse)
+    public int New(int mean, int disperse, double pad = 0.5)
     {
         var i = mean;
         for (int j = 0; j < disperse; j++)
         {
-            if (_rng.NextDouble() < 0.5)
+            if (_rng.NextDouble() < pad)
             {
                 i++;
                 continue;
