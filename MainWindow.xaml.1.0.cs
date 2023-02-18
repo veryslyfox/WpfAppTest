@@ -12,7 +12,7 @@ using Objects.SpecialMath;
 using Objects.Data;
 using Style = Objects.Data.Style;
 using Vector = Objects.Vector;
-
+using static System.Math;
 namespace WpfApp1;
 
 public partial class MainWindow : Window
@@ -27,22 +27,50 @@ public partial class MainWindow : Window
     private Roller[] _rollers = new Roller[] { new Roller(0), new Roller(2 * Math.PI / 3), new Roller(4 * Math.PI / 3) };
     private Color[] _labs = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
     private Color? _mouseColor;
-    private Bitmap _map = new Bitmap(new Style(20, 20, Color.FromRgb(255, 255, 255), 5, Color.FromRgb(255, 0, 255)), 40, 40);
+    private Bitmap _map = new Bitmap(new Style(800, 800, Color.FromRgb(255, 255, 255)), 800, 800);
     private int[,] _field = new int[50, 50];
+    private int[] _norm = new int[800];
     public MainWindow()
     {
+        Array.Fill(_norm, 0);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
         _timer.Interval = TimeSpan.FromSeconds(0.1);
-        _field[0, 0] = 6;
-        _field[40, 40] = -3;
         _f = 1;
         _timer.Tick += Tick;
         _timer.Start();
         MouseLeftButtonDown += ButtonHandler;
     }
 
+    
+    private void Tick(object? sender, EventArgs e)
+    {
+        _bitmap.Lock();
+        for (int i = 0; i < 100; i++)
+        {
+            _norm[New(400, 500)]++;
+        }
+        for (int y = 0; y < _bitmap.PixelHeight; y++)
+        {
+            for (int x = 0; x < _bitmap.PixelWidth; x++)
+            {
+                if (800 - y < _norm[x])
+                {
+                    var color = FromRgb(255, 255, 255);
+                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                    unsafe
+                    {
+
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    }
+                }
+            }
+        }
+        _f += 10;
+        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+        _bitmap.Unlock();
+    }
     private void ButtonHandler(object sender, MouseEventArgs args)
     {
         var position = args.GetPosition(this);
@@ -111,28 +139,19 @@ public partial class MainWindow : Window
         DoubleInterval(300, 360, d, a, c);
         return Interpolation(result, Color.FromRgb(v, v, v), s);
     }
-    private void Tick(object? sender, EventArgs e)
+    public int New(int mean, int disperse)
     {
-        _bitmap.Lock();
-        for (int y = 0; y < _bitmap.PixelHeight; y++)
+        var i = mean;
+        for (int j = 0; j < disperse; j++)
         {
-            for (int x = 0; x < _bitmap.PixelWidth; x++)
+            if (_rng.NextDouble() < 0.5)
             {
-                if (Math.Atan2(y, x) == Math.Sqrt(x * x + y * y))
-                {
-                    var color = FromRgb(255, 255, 255);
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    unsafe
-                    {
-
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-                    }
-                }
+                i++;
+                continue;
             }
+            i--;
         }
-        _f += 10;
-        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
-        _bitmap.Unlock();
+        return i;
     }
     private int GetRNeighborCount(int column, int row)
     {
