@@ -101,14 +101,13 @@ namespace Objects
         public int Y2 { get; }
         public Point Begin { get; }
         public Point End { get; }
-        public double Gradient { get => (Y2 - Y1) / (X2 - X1); }
         public static double Atan(Point point)
         {
             return Math.Atan2(point.Y, point.X);
         }
         public bool DotRight(Point point)
         {
-            return Gradient < new Vector(new Point(0, 0), point).Gradient;
+            return true;
         }
 
     }

@@ -1,5 +1,6 @@
 using System.Windows;
 namespace Objects.VolumeObjects;
+//ä
 class Vector3
 {
     public Point3 Begin { get; }
@@ -37,4 +38,15 @@ class Point3
     public int X { get; }
     public int Y { get; }
     public int Z { get; }
+}
+class SchlafliSymbol
+{
+    public SchlafliSymbol(int p, int q)
+    {
+        P = p;
+        Q = q;
+    }
+    
+    public int P { get; }
+    public int Q { get; }
 }
