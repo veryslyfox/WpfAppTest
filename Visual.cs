@@ -51,7 +51,7 @@ namespace Objects
         bool IsColored(Point point);
         Color GetColor(Point point);
     }
-    class Shape : IPixelMap
+    class Shape
     {
         public Shape(Color color, params (int, int)[] points)
         {
@@ -61,7 +61,7 @@ namespace Objects
         public (int, int)[] Points { get; }
         public Color Color { get; }
 
-        public bool IsColored(Point point)
+        public bool IsColored(int x, int y)
         {
             var shape = new Vector[Points.Length];
 
@@ -70,7 +70,7 @@ namespace Objects
                 shape[i] = new(Points[i].Item1, Points[i].Item2, Points[i + 1].Item1, Points[i + 1].Item2);
             }
             shape[shape.Length - 1] = new Vector(Points[shape.Length - 1].Item1, Points[shape.Length - 1].Item2, Points[0].Item1, Points[0].Item2);
-            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(point));
+            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(new Point(x, y)));
         }
         public Color GetColor(Point point)
         {
@@ -101,14 +101,13 @@ namespace Objects
         public int Y2 { get; }
         public Point Begin { get; }
         public Point End { get; }
-        public static double Atan(Point point)
+        static public bool DotRight(Point point, Point a)
         {
-            return Math.Atan2(point.Y, point.X);
+            return Math.Atan2(point.Y, point.X) < Math.Atan2(a.Y, a.X);
         }
         public bool DotRight(Point point)
         {
-            return true;
+            return DotRight(point, End - ((System.Windows.Vector)Begin));
         }
-
     }
 }

@@ -47,31 +47,32 @@ public partial class MainWindow : Window
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
+        for (double t = 0; t < 100; t+=0.01)
+        {
+            _map[(int)Abs(Sin(t) * 799), (int)Abs(Cos(2 * t + _f) * 799)] = true;
+        }
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var a = x - 400;
-                var b = y - 400;
-                var color = HsvToRgb((int)(Atan2(b, a) / PI * 100), (byte)(Sqrt(b * b + a * a) / 6), 255);
-                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                unsafe
+                if (_map[x, y])
                 {
+                    var color = FromRgb(255, 255, 255);
+                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                    unsafe
+                    {
 
-                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    }
                 }
             }
         }
-        _f += 10;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
         _bitmap.Unlock();
     }
     private void ButtonHandler(object sender, MouseEventArgs args)
     {
-        var position = args.GetPosition(this);
-        int x = (int)position.X;
-        int y = (int)position.Y;
-        _map[x / 25, y / 25] = true;
+        _f++;
     }
 
     private Color FromRgb(int r, int g, int b)
