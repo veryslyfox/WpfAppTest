@@ -47,15 +47,11 @@ public partial class MainWindow : Window
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
-        for (double t = 0; t < 100; t+=0.01)
-        {
-            _map[(int)Abs(Sin(t) * 799), (int)Abs(Cos(2 * t + _f) * 799)] = true;
-        }
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                if (_map[x, y])
+                if (Vector.DotRight(new Point(200, 500), new Point(x - 200, y - 500)))
                 {
                     var color = FromRgb(255, 255, 255);
                     var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
