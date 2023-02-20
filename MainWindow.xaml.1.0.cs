@@ -51,15 +51,29 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                if (Vector.DotRight(new Point(200, 500), new Point(x - 200, y - 500)))
+                var a = x - 400;
+                var b = y - 400;
+                var dist = (a * a + b * b);
+                Color color;
+                if (dist < 150 * 150)
                 {
-                    var color = FromRgb(255, 255, 255);
-                    var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                    unsafe
-                    {
 
-                        *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                    var d = 256 - (int)Sqrt(dist);
+                    color = FromSRgb(d, d, d);
+                    if (b < 10 && b > -10)
+                    {
+                        color = FromSRgb(d, d, 0);
                     }
+                }
+                else
+                {
+                    color = FromRgb(127, 127, 127);
+                }
+                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                unsafe
+                {
+
+                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
                 }
             }
         }

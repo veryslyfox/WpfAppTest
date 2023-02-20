@@ -103,7 +103,7 @@ namespace Objects
         public Point End { get; }
         static public bool DotRight(Point point, Point a)
         {
-            return Math.Atan2(point.Y, point.X) < Math.Atan2(a.Y, a.X);
+            return a.X * point.Y - a.Y * point.X < 0;
         }
         public bool DotRight(Point point)
         {
