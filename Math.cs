@@ -96,18 +96,19 @@ static class SpecialMath
         var a = k / n * 2 * Math.PI;
         return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
     }
-    public static bool IsDotFromMandelbrotSet(int x, int y, int k, double a)
+    public static int DotFromMandelbrotSet(double x, double y)
     {
-        var c = new Complex(x, y);
-        var n = 0;
+        var c = new Complex(0, 0);
+        var a = new Complex(x, y);
         for (int i = 0; i < 30; i++)
         {
-            if(c.Real < (c * c + a).Real)
+            c = c * c + a;
+            if (c.Magnitude > 2)
             {
-                n++;
+                return 30 - i;
             }
         }
-        return n < k;
+        return 0;
     } 
 }
 class Matrix3

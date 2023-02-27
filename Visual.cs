@@ -70,7 +70,7 @@ namespace Objects
                 shape[i] = new(Points[i].Item1, Points[i].Item2, Points[i + 1].Item1, Points[i + 1].Item2);
             }
             shape[shape.Length - 1] = new Vector(Points[shape.Length - 1].Item1, Points[shape.Length - 1].Item2, Points[0].Item1, Points[0].Item2);
-            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(new Point(x, y)));
+            return Array.TrueForAll(shape, (Vector vector) => vector.DotRight(x, y));
         }
         public Color GetColor(Point point)
         {
@@ -105,9 +105,9 @@ namespace Objects
         {
             return a.X * point.Y - a.Y * point.X < 0;
         }
-        public bool DotRight(Point point)
+        public bool DotRight(int x, int y)
         {
-            return DotRight(point, End - ((System.Windows.Vector)Begin));
+            return DotRight(new Point(x, y), End - ((System.Windows.Vector)Begin));
         }
     }
 }

@@ -29,10 +29,9 @@ public partial class MainWindow : Window
     private Color? _mouseColor;
     private Bitmap _map = new Bitmap(new Style(800, 800, Color.FromRgb(255, 255, 255)), 800, 800);
     private int[,] _field = new int[50, 50];
-    private int[] _norm = new int[800];
+    private int[,] _norm = new int[800, 800];
     public MainWindow()
     {
-        Array.Fill(_norm, 0);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -51,24 +50,8 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var a = x - 400;
-                var b = y - 400;
-                var dist = (a * a + b * b);
-                Color color;
-                if (dist < 150 * 150)
-                {
-
-                    var d = 256 - (int)Sqrt(dist);
-                    color = FromSRgb(d, d, d);
-                    if (b < 10 && b > -10)
-                    {
-                        color = FromSRgb(d, d, 0);
-                    }
-                }
-                else
-                {
-                    color = FromRgb(127, 127, 127);
-                }
+                var c = SpecialMath.DotFromMandelbrotSet((x - 400.0) / 300.0, (y - 400.0) / 300.0) * 8; 
+                Color color = FromSRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -79,6 +62,30 @@ public partial class MainWindow : Window
         }
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
         _bitmap.Unlock();
+    }
+    private void New2D(int disperse)
+    {
+        var i = 400;
+        var j = 400;
+        for (int n = 0; n < disperse; n++)
+        {
+            switch (_rng.Next(4))
+            {
+                case 0:
+                    i++;
+                    break;
+                case 1:
+                    i--;
+                    break;
+                case 2:
+                    j++;
+                    break;
+                case 3:
+                    j--;
+                    break;
+            }
+        }
+        _norm[i, j] += 255;
     }
     private void ButtonHandler(object sender, MouseEventArgs args)
     {
