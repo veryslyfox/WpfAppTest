@@ -96,9 +96,8 @@ static class SpecialMath
         var a = k / n * 2 * Math.PI;
         return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
     }
-    public static int DotFromMandelbrotSet(double x, double y)
+    public static int DotFromMandelbrotSet(double x, double y, double k, Complex c)
     {
-        var c = new Complex(0, 0);
         var a = new Complex(x, y);
         for (int i = 0; i < 30; i++)
         {
@@ -109,7 +108,7 @@ static class SpecialMath
             }
         }
         return 0;
-    } 
+    }
 }
 class Matrix3
 {

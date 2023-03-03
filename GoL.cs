@@ -1,15 +1,35 @@
-/*using System;
+using System;
 using System.IO;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using System.Collections.Generic;
 using System.Windows.Input;
+using Button = Objects.Button;
+using Objects;
+using Objects.SpecialMath;
 using Objects.Data;
-
+using Style = Objects.Data.Style;
+using Vector = Objects.Vector;
+using static System.Math;
 namespace WpfApp1;
 partial class MainWindow
 {
-    static uint[,] _field = new uint[40, 40];
     static int _x, _y;
     static Rules _rules;
-
+    private readonly DispatcherTimer _timer = new();
+    private readonly WriteableBitmap _bitmap;
+    private readonly Random _rng = new();
+    private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
+    private double _time;
+    private int _f;
+    private Color[] _labs = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
+    private Color? _mouseColor;
+    private uint[,] _field = new uint[800, 800];
+    private int[,] _norm = new int[800, 800];
+    private double _m;
     enum Rules
     {
         Conway,
@@ -26,23 +46,48 @@ partial class MainWindow
         HardLife,
         Replace
     }
-
-    void Main()
+    public MainWindow()
     {
-        const int FieldWidth = 40;
-        const int FieldHeight = 40;
-        _field = new uint[FieldWidth, FieldHeight];
-        for (int i = 0; i < FieldWidth; i++)
+        InitializeComponent();
+        _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
+        image.Source = _bitmap;
+        _timer.Interval = TimeSpan.FromSeconds(0.1);
+        _rules = Rules.Avgust;
+        _field[400, 400] = 1;
+        _field[400, 401] = 1;
+        _field[401, 400] = 1;
+        _field[401, 401] = 1;
+        _f = 1;
+        _timer.Tick += Tick;
+        KeyDown += ProcessInput;
+        _timer.Start();
+    }
+    private void Tick(object? sender, EventArgs e)
+    {
+        _bitmap.Lock();
+        for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
-            for (int j = 0; j < FieldHeight; j++)
+            for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                _field[i, j] = 0;
+                Color color;
+                if (_field[x, y] != 0)
+                {
+                    color = Color.FromRgb(255, 255, 255);
+                }
+                else
+                {
+                    color = Color.FromRgb(0, 0, 0);
+                }
+                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+                unsafe
+                {
+                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+                }
             }
         }
-        _x = 20;
-        _y = 20;
-        _rules = Rules.Avgust;
-        KeyDown += ProcessInput;
+        _f++;
+        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+        _bitmap.Unlock();
     }
     void ProcessInput(object sender, KeyEventArgs args)
     {
@@ -96,7 +141,7 @@ partial class MainWindow
             case Key.C:
                 Array.Clear(_field, 0, _field.GetLength(0) * _field.GetLength(1));
                 break;
-            
+
             case Key.I:
                 for (int row = 0; row < _field.GetLength(1); row++)
                 {
@@ -108,7 +153,7 @@ partial class MainWindow
                 break;
         }
     }
-    private static void Save()
+    void Save()
     {
         Console.Clear();
         Console.Write("Введите название: ");
@@ -129,7 +174,7 @@ partial class MainWindow
         }
     }
 
-    private static void Load()
+    private void Load()
     {
         Console.Clear();
         Console.Write("Введите название: ");
@@ -157,7 +202,7 @@ partial class MainWindow
         }
     }
 
-    static int GetNeighborCount(int column, int row)
+    int GetNeighborCount(int column, int row)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -204,7 +249,7 @@ partial class MainWindow
 
         return count;
     }
-    static int GetNeighborCount(int column, int row, int cell)
+    int GetNeighborCount(int column, int row, int cell)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -251,7 +296,7 @@ partial class MainWindow
 
         return count;
     }
-    static int GetHexNeighborCount(int column, int row)
+    int GetHexNeighborCount(int column, int row)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -289,7 +334,7 @@ partial class MainWindow
         return count;
     }
 
-    static int GetNeighborCount2(int column, int row)
+    int GetNeighborCount2(int column, int row)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -317,7 +362,7 @@ partial class MainWindow
 
         return count;
     }
-    static int NeighborAsGreenCell(int column, int row)
+    int NeighborAsGreenCell(int column, int row)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -364,7 +409,7 @@ partial class MainWindow
 
         return count;
     }
-    static void Evolution()
+    void Evolution()
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -571,17 +616,17 @@ partial class MainWindow
                             break;
                         }
                     case Rules.Replace:
-                    {
-                        _field[column, row] = ((uint)(GetNeighborCount(column, row) % 2));
-                        break;
-                    }
+                        {
+                            _field[column, row] = ((uint)(GetNeighborCount(column, row) % 2));
+                            break;
+                        }
                     case Rules.HardLife:
                         {
                             int NeighborCount(int cell)
                             {
                                 return GetNeighborCount(column, row, cell);
                             }
-                            
+
                             if (_field[column, row] == 3)
                             {
                                 var leftAndRightExpand = true;
@@ -632,18 +677,13 @@ partial class MainWindow
                             }
                             break;
                         }
-                    
+
                 }
 
             }
         }
 
         _field = newField;
-    }
-
-    void DrawField()
-    {
-        
     }
 
     private bool[,] GetBitmap()
@@ -655,11 +695,11 @@ partial class MainWindow
             {
                 result[i, j] = _field[i, j] > 0;
             }
-        }   
+        }
         return result;
     }
 
-    static void DrawField2()
+    void DrawField2()
     {
         Console.CursorLeft = 0;
         Console.CursorTop = 0;
@@ -696,7 +736,7 @@ partial class MainWindow
         Console.CursorLeft = _x;
         Console.CursorTop = _y;
     }
-    static void OnRandom(double probability)
+    void OnRandom(double probability)
     {
         var rng = new Random();
         for (int row = 0; row < _field.GetLength(1); row++)
@@ -710,11 +750,11 @@ partial class MainWindow
             }
         }
     }
-    static void Line(int iBegin, int jBegin, int length)
+    void Line(int iBegin, int jBegin, int length)
     {
         for (int i = 0; i < length; i++)
         {
             _field[iBegin + i, jBegin] = 1;
         }
     }
-}*/
+}
