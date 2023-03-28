@@ -121,35 +121,43 @@ static class SpecialMath
         }
         return roots;
     }
-    public static (int Energy, int Color) NewtonFractal(double x, double y, Complex[] roots, int n, double tolerant)
+    public static (int Energy, int Color) NewtonFractal(double x, double y, double tolerant, Complex a, Complex b)
     {
-        Complex F(Complex x, int p)
+        var r1 = 1;
+        var r2 = a;
+        var r3 = b;
+        if(F(r1) != 0 || F(r2) != 0 || F(r3) != 0)
         {
-            if (p == 0)
-            {
-                return 1;
-            }
-            return F(x, p - 1) * x;
+            throw new Exception("Not root exception");
+        }
+        Complex F(Complex x)
+        {
+            return x * x * x - 1;
         }
         Complex dF(Complex x)
         {
-            return n * F(x, n - 1);
+            return 3 * x * x;
         }
-        Complex z;
-        Complex znext = new Complex(x, y);
-        for (int i = 0; i < 32; i++)
+        Complex z = new Complex(x, y);
+        Complex znext = 0;
+        for (int i = 0; i < 255; i++)
         {
+            znext = z - F(z) / dF(z);
             z = znext;
-            znext = z - F(z, n) / dF(z);
-            for (int j = 0; j < n; j++)
+            if (Abs(z - r1) < tolerant)
             {
-                if (Abs(znext - roots[j]) <= tolerant)
-                {
-                    return (i, j);
-                }
+                return (255, 0);
+            }
+            if (Abs(z - r2) < tolerant)
+            {
+                return (255, 1);
+            }
+            if (Abs(z - r3) < tolerant)
+            {
+                return (255, 2);
             }
         }
-        return (255, 0);
+        return (0, 0);
     }
     public static int JuliaSet(double x, double y, int repeat, double bold, Func<Complex, Complex> func, double dy)
     {
