@@ -7,6 +7,9 @@ using System;
 using System.Numerics;
 using System.Windows.Media;
 using VolumeObjects;
+using Vector = Objects.Vector;
+using System.Collections.Generic;
+
 static class SpecialMath
 {
     public static Point XYToPolar(Point point)
@@ -121,22 +124,18 @@ static class SpecialMath
         }
         return roots;
     }
-    public static (int Energy, int Color) NewtonFractal(double x, double y, double tolerant, Complex a, Complex b)
+    public static int NewtonFractal(double x, double y, double tolerance)
     {
-        var r1 = 1;
-        var r2 = a;
-        var r3 = b;
-        if(F(r1) != 0 || F(r2) != 0 || F(r3) != 0)
-        {
-            throw new Exception("Not root exception");
-        }
+        var r1 = 2;
+        var r2 = Exp(2 / 3.0 * Math.PI * ImaginaryOne) * 2;
+        var r3 = r2 * r2 * 2;
         Complex F(Complex x)
         {
-            return x * x * x - 1;
+            return 8 * x * x * x - 1;
         }
         Complex dF(Complex x)
         {
-            return 3 * x * x;
+            return 24 * x * x;
         }
         Complex z = new Complex(x, y);
         Complex znext = 0;
@@ -144,20 +143,29 @@ static class SpecialMath
         {
             znext = z - F(z) / dF(z);
             z = znext;
-            if (Abs(z - r1) < tolerant)
+            if (Abs(z - r1) < tolerance)
             {
-                return (255, 0);
+                return 0;
             }
-            if (Abs(z - r2) < tolerant)
+            if (Abs(z - r2) < tolerance)
             {
-                return (255, 1);
+                return 1;
             }
-            if (Abs(z - r3) < tolerant)
+            if (Abs(z - r3) < tolerance)
             {
-                return (255, 2);
+                return 2;
             }
         }
-        return (0, 0);
+        return 0;
+    }
+    public static double Oscillation(double value, double axis, double ampl, double dx = 0.00125)
+    {
+        if (value == 0 && ((axis / dx) - (int)(axis / dx)) != 0)
+        {
+            return 0;
+        }
+        var prev = Oscillation(value - dx, axis, ampl, dx);
+        return prev + dx * Abs(axis - ampl * prev);
     }
     public static int JuliaSet(double x, double y, int repeat, double bold, Func<Complex, Complex> func, double dy)
     {
@@ -188,6 +196,15 @@ static class SpecialMath
         }
         return 0;
     }
+    public static IEnumerable<Vector> PythagorasTree(int depth, Matrix matrix, Matrix matrix2)
+    {
+        return PythagorasTree(depth - 1, matrix, matrix2).Select(v => Tree(v, matrix)).Concat(PythagorasTree(depth - 1, matrix, matrix2).Select(v => Tree(v, matrix2)));
+    }
+    public static Vector Tree(Vector v, Matrix matrix)
+    {
+        return new Vector(v.End, (Point)(v.End - v.Begin) * matrix);
+    }
+
     public static Func<double, double> Derivative(Func<double, double> func, double dx = 0.01)
     {
         return (double d) => (func(d + dx) - func(d)) / dx;

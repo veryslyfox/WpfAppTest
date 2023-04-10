@@ -23,6 +23,7 @@
 //     private readonly WriteableBitmap _bitmap;
 //     private readonly Random _rng = new();
 //     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
+//     private int _enter;
 //     public int _f;
 //     private int[,] _field = new int[400, 400];
 //     private int _count;
@@ -32,6 +33,11 @@
 //     private int _generations;
 //     private bool _stop;
 //     private string _nsurvival;
+//     private Color[] Colors = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255) };
+//     private double _prob;
+//     private int _cell;
+//     private double P1;
+//     private double P2;
 
 //     enum Rules
 //     {
@@ -58,18 +64,29 @@
 //         BigLife,
 //         Fire,
 //         Replicator,
+//         Bombplicator,
+//         HexSeeds,
+//         Rakes,
+//         Brain,
+//         Cross,
+//         Social,
 //     }
 //     public MainWindow()
 //     {
 //         _stop = true;
 //         //B34w/S23"birth 3 4&conf212 survival 23"
-//         _birth = "3";
-//         _survival = "236";
+//         _birth = "";
+//         _survival = "";
+//         _prob = 0.1;
+//         _cell = 1;
 //         _nbirth = "";
 //         _nsurvival = "";
+//         _enter = 1;
 //         _x = 200;
 //         _y = 200;
-//         _rules = Rules.Avgust;
+//         P1 = 0.7;
+//         P2 = 0.2;
+//         _rules = Rules.NotStableLife;
 //         InitializeComponent();
 //         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
 //         image.Source = _bitmap;
@@ -85,8 +102,7 @@
 //         {
 //             for (int x = 0; x < _bitmap.PixelWidth; x++)
 //             {
-//                 var c = _field[x / 2, y / 2] == 0 ? 0 : 255;
-//                 var color = FromRgb(c, c, c);
+//                 var color = _field[x / 2, y / 2] == 0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
 //                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
 //                 unsafe
 //                 {
@@ -203,15 +219,7 @@
 //                 break;
 
 //             case Key.Space:
-//                 if (_rules != Rules.HardLife)
-//                     _field[_x, _y] = _field[_x, _y] == 0 ? 1 : 0;
-//                 else
-//                 {
-//                     if (_field[_x, _y] != 4)
-//                         _field[_x, _y]++;
-//                     else
-//                         _field[_x, _y] = 0;
-//                 }
+//                 _field[_x, _y] = _field[_x, _y] == 0 ? _enter : 0;
 //                 break;
 
 //             case Key.C:
@@ -228,20 +236,20 @@
 //                 }
 //                 break;
 //             case Key.N:
-//                 Evolution2(null, new EventArgs());
+//                 Evolution(null, new EventArgs());
 //                 break;
 //             case Key.R:
-//                 OnRandom(0.03);
+//                 OnRandom(_prob, _cell);
 //                 break;
 //             case Key.S:
 //                 if (_stop)
 //                 {
-//                     _timer.Tick += Evolution2;
+//                     _timer.Tick += Evolution;
 //                     _stop = false;
 //                 }
 //                 else
 //                 {
-//                     _timer.Tick -= Evolution2;
+//                     _timer.Tick -= Evolution;
 //                     _stop = true;
 //                 }
 //                 break;
@@ -268,33 +276,6 @@
 //         }
 //     }
 
-//     private void Load()
-//     {
-//         Console.Clear();
-//         Console.Write("Введите название: ");
-//         var name = Console.ReadLine();
-//         var fileName = $"{name}.field";
-//         if (!File.Exists(fileName))
-//         {
-//             return;
-//         }
-
-//         using (var file = File.Open(fileName, FileMode.Open))
-//         {
-//             var reader = new BinaryReader(file);
-//             var width = reader.ReadInt32();
-//             var height = reader.ReadInt32();
-//             var field = new int[width, height];
-//             for (int row = 0; row < field.GetLength(1); row++)
-//             {
-//                 for (int column = 0; column < field.GetLength(0); column++)
-//                 {
-//                     field[column, row] = reader.ReadInt32();
-//                 }
-//             }
-//             _field = field;
-//         }
-//     }
 //     int GetNeighborCount3(int column, int row)
 //     {
 //         var width = _field.GetLength(0);
@@ -488,7 +469,6 @@
 //         {
 //             result += '-';
 //         }
-//         result += 'd';
 //         if (row != 0 && _field[column, row - 1] != 0)
 //         {
 //             result += '.';
@@ -505,7 +485,6 @@
 //         {
 //             result += '-';
 //         }
-//         result += 'd';
 //         if (column < width - 1 && _field[column + 1, row] != 0)
 //         {
 //             result += '.';
@@ -522,7 +501,6 @@
 //         {
 //             result += '-';
 //         }
-//         result += 'd';
 //         if (row < height - 1 && _field[column, row + 1] != 0)
 //         {
 //             result += '.';
@@ -539,7 +517,6 @@
 //         {
 //             result += '-';
 //         }
-//         result += 'd';
 //         if (column != 0 && _field[column - 1, row] != 0)
 //         {
 //             result += '.';
@@ -771,10 +748,7 @@
 //                     case Rules.Avgust:
 //                         {
 //                             var count = GetNeighborCount(column, row);
-//                             if (_field[column, row] != 0)
-//                             {
-//                             }
-//                             else
+//                             if (_field[column, row] == 0)
 //                             {
 //                                 if (count == 2)
 //                                 {
@@ -1064,29 +1038,16 @@
 //                         }
 //                         break;
 //                     case Rules.Circle:
-//                         // if (GetNeighborCount(column, row) is 1 or 3 && _field[column, row] == 0)
-//                         // {
-//                         //     newField[column, row] = 1;
-//                         //     break;
-//                         // }
-//                         // if (GetNeighborCount(column, row) is 8 && _field[column, row] == 1)
-//                         // {
-//                         //     newField[column, row] = 0;
-//                         //     break;
-//                         // }
-//                         if (_field[column, row] != 0)
+//                         var next = new int[] { 1, 2, 0 };
+//                         if (GetNeighborCount(column, row, next[_field[column, row]]) is 1 or 5)
 //                         {
-//                             if (GetNeighborCount(column, row) is not 8)
-//                             {
-//                                 newField[column, row] = _field[column, row] + 1;
-//                             }
+//                             newField[(column + 1) % 200, row] = _field[column, row];
+//                             newField[column, row] = next[_field[column, row]];
+//                             break;
 //                         }
 //                         else
 //                         {
-//                             if (GetNeighborCount(column, row) is 1 or 3)
-//                             {
-//                                 newField[column, row] = 1;
-//                             }
+//                             newField[column, row] = _field[column, row];
 //                         }
 //                         break;
 //                     case Rules.SeedsLight:
@@ -1147,6 +1108,106 @@
 //                             }
 //                         }
 //                         break;
+//                     case Rules.Bombplicator:
+//                         if (GetNeighborCount(column, row) is 2 or 3 && _field[column, row] != 0)
+//                         {
+//                             newField[column, row] = _field[column, row]++;
+//                         }
+//                         else if (GetNeighborCount(column, row) is 3 || (GetNeighborCount(column, row) is 4 && (GetNeighbor(column, row).Contains("..-..") || GetNeighbor2(column, row).Contains("..-..")) && _field[column, row] == 0))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.HexSeeds:
+//                         {
+//                             if (_field[column, row] == 0)
+//                             {
+//                                 if (GetHexNeighborCount(column, row) is 2)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (GetHexNeighborCount(column, row) is 6)
+//                                 {
+//                                     newField[column, row] = _field[column, row];
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Rakes:
+//                         {
+//                             string neighbor = GetNeighbor(column, row);
+//                             string neighbor2 = GetNeighbor2(column, row);
+//                             if (GetNeighborCount(column, row) is 0 && _field[column, row] != 0)
+//                             {
+//                                 newField[column, row] = _field[column, row];
+//                             }
+//                             else if (neighbor.Contains("..") || neighbor2.Contains("..") || (GetNeighborCount2(column, row) == 2 && neighbor.Contains(".-.") || neighbor2.Contains(".-.")) || neighbor.Contains("..--.") | neighbor2.Contains("..--.") && _field[column, row] == 0)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Brain:
+//                         if (_field[column, row] == 0 && GetNeighborCount4(column, row) == 2)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         if (_field[column, row] == 1)
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         if (_field[column, row] == 2)
+//                         {
+//                             newField[column, row] = 0;
+//                         }
+//                         break;
+//                     case Rules.Cross:
+//                         if (_field[column, row] == 1)
+//                         {
+//                             if (GetNeighborCount2(column, row, 1) is 0 or 1 or 2)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 0)
+//                         {
+//                             if (GetNeighborCount2(column, row) is 1 && GetNeighborCount(column, row) is 1)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 2)
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         break;
+//                     case Rules.Social:
+//                         if (_field[column, row] == 0)
+//                         {
+//                             _field[column, row] = _rng.NextDouble() < P1 ? 0 : 1;
+//                         }
+//                         if (_field[column, row] == 1)
+//                         {
+//                             _field[column, row] = _rng.NextDouble() < P2 ? 1 : 0;
+//                         }
+//                         if (_field[column, row] != 0)
+//                         {
+//                             if (GetNeighborCount(column, row) is > 1 and not 8)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                         }
+//                         else
+//                         {
+//                             if (GetNeighborCount(column, row) > 2)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
 //                 }
 
 //             }
@@ -1154,64 +1215,68 @@
 
 //         _field = newField;
 //     }
-//     public void Evolution(string rule)
+//     public void Evolution(string birth, string survival)
 //     {
-//         bool IOB(string value)
+//         for (int i = 0; i < 10; i++)
 //         {
-//             return rule.IndexOf(value) >= 0;
-//         }
-//         var width = _field.GetLength(0);
-//         var height = _field.GetLength(1);
-//         var newField = new int[width, height];
-//         for (int row = 0; row < height; row++)
-//         {
-//             for (int column = 0; column < width; column++)
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
 //             {
-//                 if (_field[column, row] != 0)
+//                 for (int column = 0; column < width; column++)
 //                 {
-//                     if (rule.IndexOf("t") == 1)
+//                     if (_field[column, row] != 0)
 //                     {
-//                         newField[column, row] = _field[column, row] + 1;
+//                         if (IsContains(survival, column, row))
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                     }
+//                     else
+//                     {
+//                         if (IsContains(birth, column, row))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
 //                     }
 //                 }
-//                 else
-//                 {
-//                     if (GetNeighborCount(column, row) is 1 or 3 or 5 or 7)
-//                     {
-//                         newField[column, row] = 1;
-//                     }
-//                 }
-//             }
 
+//             }
+//             _field = newField;
 //         }
-//         _field = newField;
+
 //     }
 //     public void Evolution2(object? sender, EventArgs args)
 //     {
-//         var width = _field.GetLength(0);
-//         var height = _field.GetLength(1);
-//         var newField = new int[width, height];
-//         for (int row = 0; row < height; row++)
+//         for (int i = 0; i < 1; i++)
 //         {
-//             for (int column = 0; column < width; column++)
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
 //             {
-//                 if (_field[column, row] != 0)
+//                 for (int column = 0; column < width; column++)
 //                 {
-//                     if (_survival.Contains(GetNeighborCount(column, row).ToString()))
+//                     if (_field[column, row] != 0)
 //                     {
-//                         newField[column, row] = _field[column, row] + 1;
+//                         if (_survival.Contains(GetNeighborCount(column, row).ToString()))
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
 //                     }
-//                 }
-//                 else
-//                 {
-//                     if (_birth.Contains(GetNeighborCount(column, row).ToString()) && _field[column, row] == 0)
+//                     else
 //                     {
-//                         newField[column, row] = 1;
+//                         if (_birth.Contains(GetNeighborCount(column, row).ToString()) && _field[column, row] == 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
 //                     }
 //                 }
 //             }
+//             _field = newField;
 //         }
-//         _field = newField;
+
 //     }
 //     private bool[,] GetBitmap()
 //     {
@@ -1263,7 +1328,7 @@
 //         Console.CursorLeft = _x;
 //         Console.CursorTop = _y;
 //     }
-//     void OnRandom(double probability)
+//     void OnRandom(double probability, int cell)
 //     {
 //         var rng = new Random();
 //         for (int row = 0; row < _field.GetLength(1); row++)
@@ -1272,7 +1337,7 @@
 //             {
 //                 if (rng.NextDouble() < probability)
 //                 {
-//                     _field[column, row] = 1; _count++;
+//                     _field[column, row] = cell;
 //                 }
 //             }
 //         }
@@ -1330,5 +1395,9 @@
 //         }
 
 //         return count;
+//     }
+//     public bool IsContains(string s, int column, int row)
+//     {
+//         return GetNeighbor(column, row).Contains(s) || GetNeighbor2(column, row).Contains(s) || s.Contains(GetNeighborCount(column, row).ToString());
 //     }
 // }

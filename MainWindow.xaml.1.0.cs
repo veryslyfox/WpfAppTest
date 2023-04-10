@@ -16,6 +16,7 @@ using static System.Math;
 using static System.Numerics.Complex;
 using System.Numerics;
 using Objects.VolumeObjects;
+using System.Threading;
 
 namespace WpfApp1;
 
@@ -42,12 +43,16 @@ public partial class MainWindow : Window
     public double _scale = 7;
     public double _x = 400;
     public double _y = 400;
-    private Complex _a = Exp(2 / 3 * PI * ImaginaryOne);
-    private Complex _b = Exp(-2 / 3 * PI * ImaginaryOne);
-
+    private Complex _a = -1;
+    private Complex _b = 1;
+    private ElementaryCA _CA;
+    private NeuralNetwork _network;
     public MainWindow()
     {
+        _network = NeuralNetwork.Random(0, 1, "2,8,8,3");
         _triangle.Sign = 1;
+        _CA = new ElementaryCA(1, 800, 800, true);
+        _CA.Memory[0][400] = 1;
         Point3 NextPoint3()
         {
             return new Point3(_rng.Next(0, 100), _rng.Next(0, 100), _rng.Next(0, 100));
@@ -70,13 +75,15 @@ public partial class MainWindow : Window
 
     private void Tick(object? sender, EventArgs e)
     {
+        Thread.Sleep(1000);
+        _network = NeuralNetwork.Random(-1, 1, "2,3");
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var value = SpecialMath.NewtonFractal(x - 400, y - 400, 0.001, _a, _b);
-                Color color = HsvToRgb((int)Abs(value.Color * 120), 255, (byte)Abs(value.Energy));
+                var c = _network.Propagation(Vector.Create(x, y));
+                Color color = FromRgb((int)(c.Values[0] * 255), (int)(c.Values[1] * 255), (int)(c.Values[2] * 255));
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -84,33 +91,9 @@ public partial class MainWindow : Window
                 }
             }
         }
-        _f += 0.01;
+        _f += 0.1;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
-    }
-    private void New2D(int disperse)
-    {
-        var i = 400;
-        var j = 400;
-        for (int n = 0; n < disperse; n++)
-        {
-            switch (_rng.Next(4))
-            {
-                case 0:
-                    i++;
-                    break;
-                case 1:
-                    i--;
-                    break;
-                case 2:
-                    j++;
-                    break;
-                case 3:
-                    j--;
-                    break;
-            }
-        }
-        _norm[i, j] += 255;
     }
     private void ButtonHandler(object sender, MouseEventArgs args)
     {
@@ -125,10 +108,6 @@ public partial class MainWindow : Window
     {
         return Color.FromRgb(((byte)(r & 255)), ((byte)(g & 255)), ((byte)(b & 255)));
     }
-    private Color FromSRgb(int r, int g, int b)
-    {
-        return Color.FromRgb(Saturate(r), Saturate(g), Saturate(b));
-    }
     public Color Normalize(Color color, byte lightness)
     {
         var r = color.R;
@@ -140,18 +119,7 @@ public partial class MainWindow : Window
             return Color.FromRgb(lightness, lightness, lightness);
         }
         var normalizer = (double)lightness / max;
-        return FromSRgb((int)(r * normalizer), ((int)(g * normalizer)), ((int)(b * normalizer)));
-
-    }
-    public Color CHVToRgb(int cold, int hot, double value)
-    {
-        var c = cold / 256.0;
-        var h = hot / 256.0;
-        var v = value;
-        var b = (c * v / (c + 2)) * 256;
-        var g = ((h * b + 2 * b - 2 * v) / (2 - h)) * 256;
-        var r = (v - b - g) * 256;
-        return Color.FromRgb(((byte)r), ((byte)g), ((byte)b));
+        return FromRgb((int)(r * normalizer), ((int)(g * normalizer)), ((int)(b * normalizer)));
     }
     public Color Interpolation(Color a, Color b, byte c)
     {
@@ -181,198 +149,6 @@ public partial class MainWindow : Window
         DoubleInterval(300, 360, d, a, c);
         return Interpolation(result, Color.FromRgb(v, v, v), s);
     }
-    public int New(int mean, int disperse, double pad = 0.5)
-    {
-        var i = mean;
-        for (int j = 0; j < disperse; j++)
-        {
-            if (_rng.NextDouble() < pad)
-            {
-                i++;
-                continue;
-            }
-            i--;
-        }
-        return i;
-    }
-    private int GetRNeighborCount(int column, int row)
-    {
-        var width = _field.GetLength(0);
-        var height = _field.GetLength(1);
-        var count = 0;
-        if (row > 0 && column > 0 && _field[column - 1, row - 1] < 0)
-        {
-            count++;
-        }
-
-        if (row > 0 && _field[column, row - 1] < 0)
-        {
-            count++;
-        }
-
-        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] < 0)
-        {
-            count++;
-        }
-
-        if (column < width - 1 && _field[column + 1, row] < 0)
-        {
-            count++;
-        }
-
-        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] < 0)
-        {
-            count++;
-        }
-
-        if (row < height - 1 && _field[column, row + 1] < 0)
-        {
-            count++;
-        }
-
-        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] < 0)
-        {
-            count++;
-        }
-
-        if (column > 0 && _field[column - 1, row] < 0)
-        {
-            count++;
-        }
-
-        return count;
-    }
-    private int GetGNeighborCount(int column, int row)
-    {
-        var width = _field.GetLength(0);
-        var height = _field.GetLength(1);
-        var count = 0;
-        if (row > 0 && column > 0 && _field[column - 1, row - 1] > 0)
-        {
-            count++;
-        }
-
-        if (row > 0 && _field[column, row - 1] > 0)
-        {
-            count++;
-        }
-
-        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] > 0)
-        {
-            count++;
-        }
-
-        if (column < width - 1 && _field[column + 1, row] > 0)
-        {
-            count++;
-        }
-
-        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] > 0)
-        {
-            count++;
-        }
-
-        if (row < height - 1 && _field[column, row + 1] > 0)
-        {
-            count++;
-        }
-
-        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] > 0)
-        {
-            count++;
-        }
-
-        if (column > 0 && _field[column - 1, row] > 0)
-        {
-            count++;
-        }
-
-        return count;
-    }
-    private int NeighborhoodActive(int column, int row, Action<int, int> action)
-    {
-        void S(int columnOffset, int rowOffset)
-        {
-            action(column + columnOffset, row + rowOffset);
-        }
-        var width = _field.GetLength(0);
-        var height = _field.GetLength(1);
-        var count = 0;
-        if (row > 0 && column > 0 && _field[column - 1, row - 1] > 0)
-        {
-            S(-1, -1);
-        }
-
-        if (row > 0 && _field[column, row - 1] > 0)
-        {
-            S(0, -1);
-        }
-
-        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] > 0)
-        {
-            S(1, -1);
-        }
-
-        if (column < width - 1 && _field[column + 1, row] > 0)
-        {
-            S(1, 0);
-        }
-
-        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] > 0)
-        {
-            S(1, 1);
-        }
-
-        if (row < height - 1 && _field[column, row + 1] > 0)
-        {
-            S(0, 1);
-        }
-
-        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] > 0)
-        {
-            S(-1, 1);
-        }
-
-        if (column > 0 && _field[column - 1, row] > 0)
-        {
-            S(-1, 0);
-        }
-
-        return count;
-    }
-    private void Next(int column, int row)
-    {
-        var value = _field[column, row];
-        if (value > 0)
-        {
-            _field[column, row]--;
-            return;
-        }
-        if (value < 0)
-        {
-            NeighborhoodActive(column, row, (int a, int b) => { if (_field[a, b] > 0) { _field[a, b] = 0; _field[column, row]--; } });
-            return;
-        }
-        if (value == 0)
-        {
-            if (GetRNeighborCount(column, row) > 0)
-            {
-                _field[column, row] = -3;
-                return;
-            }
-            if (GetGNeighborCount(column, row) > 0)
-            {
-                _field[column, row] = 6;
-                return;
-            }
-        }
-    }
-    private byte Saturate(int value)
-    => value >= 0
-        ? value <= 255
-            ? (byte)value
-            : (byte)255
-        : (byte)0;
 }
 class Sand
 {
@@ -403,5 +179,207 @@ class Sand
                 }
             }
         }
+    }
+    
+}
+public class Matrix
+{
+    public Matrix(Vector[] vectors)
+    {
+        Vectors = vectors;
+        X = vectors[0].Values.Length;
+        Y = vectors.Length;
+    }
+    public static Matrix Create(params Vector[] vectors)
+    {
+        return new(vectors);
+    }
+    public static Vector operator *(Vector vector, Matrix matrix)
+    {
+        return new(matrix.Vectors.Select(v => v * vector).ToArray());
+    }
+    public static Matrix operator +(Matrix a, Matrix b)
+    {
+        return new(a.Vectors.Zip(b.Vectors, (p, q) => p + q).ToArray());
+    }
+    public static Matrix operator *(Matrix a, double b)
+    {
+        return new(a.Vectors.Select(k => k * b).ToArray());
+    }
+    public static Matrix operator -(Matrix value)
+    {
+        return new(value.Vectors.Select(z => -z).ToArray());
+    }
+    public Vector[] Vectors { get; }
+    public void Write()
+    {
+        foreach (var item in Vectors)
+        {
+            item.Write();
+        }
+    }
+    public static Matrix Generate(int x, int y, double d = 0)
+    {
+        var array = new double[x];
+        Array.Fill(array, d);
+        var vector = new Vector(array);
+        var vectors = new Vector[y];
+        for (int i = 0; i < y; i++)
+        {
+            array = array.ToArray();
+            vector = new(array);
+            vectors[i] = vector;
+        }
+        return new(vectors);
+    }
+    public static Random Random = new Random();
+    public static Matrix GenerateBin(int x, int y)
+    {
+        var matrix = Generate(x, y, 0);
+        for (int row = 0; row < y; row++)
+        {
+            for (int column = 0; column < x; column++)
+            {
+                matrix[column, row] = Random.Next(2);
+            }
+        }
+        return matrix;
+    }
+    public double this[int x, int y]
+    {
+        get => Vectors[y].Values[x];
+        set => Vectors[y].Values[x] = value;
+    }
+    public static Matrix Dot(int x, int y)
+    {
+        var result = Generate(x, y);
+        result[Random.Next(x), Random.Next(y)] = 1;
+        return result;
+    }
+    public int X { get; }
+    public int Y { get; }
+}
+public class Vector
+{
+    public Vector(double[] values)
+    {
+        Values = values;
+    }
+    public static Vector Create(params double[] values)
+    {
+        return new(values);
+    }
+    public double[] Values { get; }
+    public static double operator *(Vector a, Vector b)
+    {
+        return a.Values.Zip(b.Values, (p, q) => p * q).Sum();
+    }
+    public static Vector operator +(Vector a, Vector b)
+    {
+        return new(a.Values.Zip(b.Values, (p, q) => p + q).ToArray());
+    }
+    public static Vector operator *(Vector a, double b)
+    {
+        return new(a.Values.Select(k => k * b).ToArray());
+    }
+    public static Vector operator -(Vector value)
+    {
+        return new(value.Values.Select(z => -z).ToArray());
+    }
+    public void Write()
+    {
+        foreach (var item in Values)
+        {
+            Console.Write(item + " ");
+        }
+        Console.WriteLine();
+    }
+    public Vector Relu()
+    {
+        return new(Values.Select(x => x < 0 ? 0 : x).ToArray());
+    }
+}
+public class NeuralNetwork
+{
+    public NeuralNetwork(Matrix[] matrices)
+    {
+        Random random = new Random();
+        Matrices = matrices;
+        DMatrix = matrices[matrices.Length - 1];
+    }
+
+    public Matrix[] Matrices { get; }
+    public Matrix DMatrix { get; set; }
+    public int Y { get; private set; }
+    public int X { get; private set; }
+    public bool LowerDot { get; private set; }
+
+    public Vector Propagation(Vector data)
+    {
+        Vector result = data;
+        foreach (var item in Matrices)
+        {
+            data = (data * item).Relu();
+        }
+        return data;
+    }
+
+
+    public static NeuralNetwork Random(int min, int max, string arch)
+    {
+        var neurons = arch.Split(',').Select(k => int.Parse(k)).ToArray();
+        Matrix[] result = new Matrix[neurons.Length - 1];
+        for (int i = 0; i < neurons.Length - 1; i++)
+        {
+            result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
+        }
+        return new(result);
+    }
+}
+
+public class NeuralNetworkPair
+{
+    public NeuralNetworkPair()
+    {
+
+    }
+}
+
+public interface IResultMetrics<T>
+{
+    double Error(T data);
+}
+public class Metrics : IResultMetrics<Vector>
+{
+    public Metrics(Vector vector)
+    {
+        Vector = vector;
+    }
+
+    public Vector Vector { get; }
+
+    public double Error(Vector vector)
+    {
+        return ((Vector + vector * -1) * (Vector + vector * -1));
+    }
+}
+public class Evolution
+{
+    static Random Random { get; } = new Random();
+    public static Matrix GetRandomMatrix(int x, int y, double min, double max)
+    {
+        var matrix = Matrix.Generate(x, y);
+        for (int row = 0; row < y; row++)
+        {
+            for (int column = 0; column < x; column++)
+            {
+                matrix[column, row] = Random.NextDouble() * (max - min) + min;
+            }
+        }
+        return matrix;
+    }
+    public static Matrix Mutation(double min, double max, Matrix matrix)
+    {
+        return matrix + GetRandomMatrix(matrix.X, matrix.Y, min, max);
     }
 }
