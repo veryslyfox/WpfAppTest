@@ -1,4 +1,5 @@
 global using Vector3S = System.Numerics.Vector3;
+using static System.Math;
 using System.Windows;
 using System;
 using System.Windows.Media;
@@ -71,7 +72,7 @@ class Plane
     public int C { get; }
     public int D { get; }
 
-    public bool IsFrom(int x, int y, int z)
+    public bool Contains(int x, int y, int z)
     {
         return A * x + B * y + C * z + D == 0;
     }
