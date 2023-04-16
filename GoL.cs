@@ -33,7 +33,7 @@ partial class MainWindow
     private int _generations;
     private bool _stop;
     private string _nsurvival;
-    private Color[] Colors = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255) };
+    private Color[] Colors = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255), Color.FromRgb(0, 0, 0), Color.FromRgb(255, 255, 255), Color.FromRgb(127, 255, 127) };
     private double _prob;
     private int _cell;
     private double P1;
@@ -92,7 +92,7 @@ partial class MainWindow
         {
             for (int column = 0; column < _field.GetLength(0); column++)
             {
-                _field[column, row] = _rng.Next(6);
+                _field[column, row] = _rng.Next(9);
             }
         }
         InitializeComponent();
@@ -1071,8 +1071,8 @@ partial class MainWindow
                         }
                         break;
                     case Rules.Circle:
-                        var next = (_field[column, row] + 1) % 3;
-                        if (GetNeighborCount(column, row, next) > 2)
+                        var next = (_field[column, row] + 1) % 6;
+                        if (GetNeighborCount(column, row, next) > 1 && _rng.NextDouble() < 0.7)
                         {
                             newField[column, row] = next;
                             break;
