@@ -309,6 +309,7 @@ class Roller
     }
     public double Sin { get; }
     public double Cos { get; }
+    public Matrix Matrix { get => new(Cos, Sin, -Sin, Cos, 0, 0); }
 }
 class Point4
 {
