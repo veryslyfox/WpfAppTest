@@ -28,13 +28,12 @@ public partial class MainWindow : Window
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
     private bool[,] _space = new bool[800, 800];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
-    private Particle2[] _particles = new Particle2[] { new(400, 400, 1, 0) };
-    Roller R1 = new Roller(PI * 1 / 12);
-    Roller R2 = new Roller(-PI * 1 / 12);
+    private HashSet<Particle2> _particles = new HashSet<Particle2> { new(400, 400, 1, 0) };
+    Roller R1 = new Roller(PI / 3);
+    Roller R2 = new Roller(-PI / 3);
     public double _f = 0;
     public MainWindow()
     {
-        
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -55,17 +54,16 @@ public partial class MainWindow : Window
         {
             for (int i = 0; i < item; i++)
             {
+                var j = 0;
                 foreach (var particle in _particles)
                 {
                     particle.Next();
-
-                    _space[(int)particle.X, (int)particle.Y] = true;
+                    j++;
+                    _space[(int)particle.X, (int)particle.Y] = ((j / 2) * 2 - j) == 0;
                 }
             }
-            _particles = _particles.SelectMany(p => new Particle2[]{p * R1.Matrix, p * R2.Matrix}).ToArray();
+            _particles = _particles.SelectMany(p => new Particle2[] { p * R1.Matrix, p * R2.Matrix }).ToHashSet();
         }
-        R1 = new(_f);
-        R2 = new(-_f);
         Thread.Sleep(1000);
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
@@ -83,7 +81,7 @@ public partial class MainWindow : Window
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
         _f += 0.1;
-        _particles = new Particle2[] { new(400, 400, 1, 0) };
+        _particles = new HashSet<Particle2> { new(400, 400, 1, 0) };
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
@@ -274,162 +272,162 @@ class Sand
 //     public int X { get; }
 //     public int Y { get; }
 // }
-// public class Vector
-// {
-//     public Vector(double[] values)
-//     {
-//         Values = values;
-//     }
-//     public static Vector Create(params double[] values)
-//     {
-//         return new(values);
-//     }
-//     public double[] Values { get; }
-//     public static double operator *(Vector a, Vector b)
-//     {
-//         return a.Values.Zip(b.Values, (p, q) => p * q).Sum();
-//     }
-//     public static Vector operator +(Vector a, Vector b)
-//     {
-//         return new(a.Values.Zip(b.Values, (p, q) => p + q).ToArray());
-//     }
-//     public static Vector operator *(Vector a, double b)
-//     {
-//         return new(a.Values.Select(k => k * b).ToArray());
-//     }
-//     public static Vector operator -(Vector value)
-//     {
-//         return new(value.Values.Select(z => -z).ToArray());
-//     }
-//     public void Write()
-//     {
-//         foreach (var item in Values)
-//         {
-//             Console.Write(item + " ");
-//         }
-//         Console.WriteLine();
-//     }
-//     public Vector Active()
-//     {
-//         return new(Values.Select(x => x * x).ToArray());
-//     }
-// }
-// public class NeuralNetwork
-// {
-//     public NeuralNetwork(Matrix[] matrices, double delta = 0.01)
-//     {
-//         Matrices = matrices;
-//         Delta = delta;
-//     }
+// // public class Vector
+// // {
+// //     public Vector(double[] values)
+// //     {
+// //         Values = values;
+// //     }
+// //     public static Vector Create(params double[] values)
+// //     {
+// //         return new(values);
+// //     }
+// //     public double[] Values { get; }
+// //     public static double operator *(Vector a, Vector b)
+// //     {
+// //         return a.Values.Zip(b.Values, (p, q) => p * q).Sum();
+// //     }
+// //     public static Vector operator +(Vector a, Vector b)
+// //     {
+// //         return new(a.Values.Zip(b.Values, (p, q) => p + q).ToArray());
+// //     }
+// //     public static Vector operator *(Vector a, double b)
+// //     {
+// //         return new(a.Values.Select(k => k * b).ToArray());
+// //     }
+// //     public static Vector operator -(Vector value)
+// //     {
+// //         return new(value.Values.Select(z => -z).ToArray());
+// //     }
+// //     public void Write()
+// //     {
+// //         foreach (var item in Values)
+// //         {
+// //             Console.Write(item + " ");
+// //         }
+// //         Console.WriteLine();
+// //     }
+// //     public Vector Active()
+// //     {
+// //         return new(Values.Select(x => x * x).ToArray());
+// //     }
+// // }
+// // public class NeuralNetwork
+// // {
+// //     public NeuralNetwork(Matrix[] matrices, double delta = 0.01)
+// //     {
+// //         Matrices = matrices;
+// //         Delta = delta;
+// //     }
 
-//     public Matrix[] Matrices { get; }
-//     public double Delta { get; set; }
-//     public bool LowerDot { get; private set; }
+// //     public Matrix[] Matrices { get; }
+// //     public double Delta { get; set; }
+// //     public bool LowerDot { get; private set; }
 
-//     public Vector Propagate(Vector data)
-//     {
-//         Vector result = data;
-//         foreach (var item in Matrices)
-//         {
-//             data = (data * item).Active();
-//         }
-//         return data;
-//     }
-
-
-//     public static NeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta = 0.01)
-//     {
-//         var neurons = arch.Split(',').Select(k => int.Parse(k)).ToArray();
-//         Matrix[] result = new Matrix[neurons.Length - 1];
-//         for (int i = 0; i < neurons.Length - 1; i++)
-//         {
-//             result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
-//         }
-//         return new(result, delta);
-//     }
-//     public void Write()
-//     {
-//         foreach (var item in Matrices)
-//         {
-//             item.Write();
-//         }
-//     }
-//     public void BackPropagate(int layer, int x, int y, Vector input, Vector output, double speed)
-//     {
-//         var err = Propagate(input) * output;
-//         this[x, y, layer] += Delta;
-//         var err2 = Propagate(input) * output;
-//         this[x, y, layer] += (err2 - err) / Delta * speed - Delta;
-//     }
-//     public Matrix this[int layer]
-//     {
-//         get => Matrices[layer];
-//         set => Matrices[layer] = value;
-//     }
-//     public double this[int x, int y, int layer]
-//     {
-//         get => Matrices[layer][x, y];
-//         set => Matrices[layer][x, y] = value;
-//     }
-// }
+// //     public Vector Propagate(Vector data)
+// //     {
+// //         Vector result = data;
+// //         foreach (var item in Matrices)
+// //         {
+// //             data = (data * item).Active();
+// //         }
+// //         return data;
+// //     }
 
 
-// public class NeuralNetworkPair
-// {
-//     public NeuralNetworkPair(NeuralNetwork a, NeuralNetwork b)
-//     {
-//         A = a;
-//         B = b;
-//     }
+// //     public static NeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta = 0.01)
+// //     {
+// //         var neurons = arch.Split(',').Select(k => int.Parse(k)).ToArray();
+// //         Matrix[] result = new Matrix[neurons.Length - 1];
+// //         for (int i = 0; i < neurons.Length - 1; i++)
+// //         {
+// //             result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
+// //         }
+// //         return new(result, delta);
+// //     }
+// //     public void Write()
+// //     {
+// //         foreach (var item in Matrices)
+// //         {
+// //             item.Write();
+// //         }
+// //     }
+// //     public void BackPropagate(int layer, int x, int y, Vector input, Vector output, double speed)
+// //     {
+// //         var err = Propagate(input) * output;
+// //         this[x, y, layer] += Delta;
+// //         var err2 = Propagate(input) * output;
+// //         this[x, y, layer] += (err2 - err) / Delta * speed - Delta;
+// //     }
+// //     public Matrix this[int layer]
+// //     {
+// //         get => Matrices[layer];
+// //         set => Matrices[layer] = value;
+// //     }
+// //     public double this[int x, int y, int layer]
+// //     {
+// //         get => Matrices[layer][x, y];
+// //         set => Matrices[layer][x, y] = value;
+// //     }
+// // }
 
-//     public NeuralNetwork A { get; }
-//     public NeuralNetwork B { get; }
-// }
 
-// public interface IResultMetrics<T>
-// {
-//     double Error(T data);
-// }
-// public class Metrics : IResultMetrics<Vector>
-// {
-//     public Metrics(Vector vector)
-//     {
-//         Vector = vector;
-//     }
+// // public class NeuralNetworkPair
+// // {
+// //     public NeuralNetworkPair(NeuralNetwork a, NeuralNetwork b)
+// //     {
+// //         A = a;
+// //         B = b;
+// //     }
 
-//     public Vector Vector { get; }
+// //     public NeuralNetwork A { get; }
+// //     public NeuralNetwork B { get; }
+// // }
 
-//     public double Error(Vector vector)
-//     {
-//         return ((Vector + vector * -1) * (Vector + vector * -1));
-//     }
-// }
-// public class Evolution
-// {
-//     static Random Random { get; } = new Random();
-//     public static Matrix GetRandomMatrix(int x, int y, double min, double max)
-//     {
-//         var matrix = Matrix.Generate(x, y);
-//         for (int row = 0; row < y; row++)
-//         {
-//             for (int column = 0; column < x; column++)
-//             {
-//                 matrix[column, row] = Random.NextDouble() * (max - min) + min;
-//             }
-//         }
-//         return matrix;
-//     }
-//     public static Matrix Mutation(double min, double max, Matrix matrix)
-//     {
-//         return matrix + GetRandomMatrix(matrix.X, matrix.Y, min, max);
-//     }
-//     public static NeuralNetworkPair Crossing(NeuralNetworkPair pair)
-//     {
-//         var dot = Random.Next(pair.A.Matrices.Length);
-//         var a = pair.A.Matrices.AsSpan(0, dot).ToArray();
-//         var b = pair.A.Matrices.AsSpan(dot, pair.A.Matrices.Length - dot + 1).ToArray();
-//         var c = pair.B.Matrices.AsSpan(0, dot).ToArray();
-//         var d = pair.B.Matrices.AsSpan(dot, pair.B.Matrices.Length - dot + 1).ToArray();
-//         return new(new(a.Concat(c).ToArray()), new(b.Concat(d).ToArray()));
-//     }
-// }
+// // public interface IResultMetrics<T>
+// // {
+// //     double Error(T data);
+// // }
+// // public class Metrics : IResultMetrics<Vector>
+// // {
+// //     public Metrics(Vector vector)
+// //     {
+// //         Vector = vector;
+// //     }
+
+// //     public Vector Vector { get; }
+
+// //     public double Error(Vector vector)
+// //     {
+// //         return ((Vector + vector * -1) * (Vector + vector * -1));
+// //     }
+// // }
+// // public class Evolution
+// // {
+// //     static Random Random { get; } = new Random();
+// //     public static Matrix GetRandomMatrix(int x, int y, double min, double max)
+// //     {
+// //         var matrix = Matrix.Generate(x, y);
+// //         for (int row = 0; row < y; row++)
+// //         {
+// //             for (int column = 0; column < x; column++)
+// //             {
+// //                 matrix[column, row] = Random.NextDouble() * (max - min) + min;
+// //             }
+// //         }
+// //         return matrix;
+// //     }
+// //     public static Matrix Mutation(double min, double max, Matrix matrix)
+// //     {
+// //         return matrix + GetRandomMatrix(matrix.X, matrix.Y, min, max);
+// //     }
+// //     public static NeuralNetworkPair Crossing(NeuralNetworkPair pair)
+// //     {
+// //         var dot = Random.Next(pair.A.Matrices.Length);
+// //         var a = pair.A.Matrices.AsSpan(0, dot).ToArray();
+// //         var b = pair.A.Matrices.AsSpan(dot, pair.A.Matrices.Length - dot + 1).ToArray();
+// //         var c = pair.B.Matrices.AsSpan(0, dot).ToArray();
+// //         var d = pair.B.Matrices.AsSpan(dot, pair.B.Matrices.Length - dot + 1).ToArray();
+// //         return new(new(a.Concat(c).ToArray()), new(b.Concat(d).ToArray()));
+// //     }
+// // }
