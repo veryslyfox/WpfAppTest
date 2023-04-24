@@ -209,44 +209,34 @@ static class SpecialMath
     {
         return (double d) => (func(d + dx) - func(d)) / dx;
     }
-    public static Func<double, double> Int(Func<double, double> func, double dx = 0.01)
+    public static Func<double, double, double> Int(Func<double, double> func, double dx = 0.01)
     {
-        return (double d) =>
+        return (double a, double b) =>
         {
             var acc = 0.0;
-            for (double i = 0; i < d; i += dx)
+            for (double i = a; i < b; i += dx)
             {
                 acc += func(i);
             }
             return acc;
         };
     }
-    static int _m1 = 100, _m2 = 200, _m3 = 300;
-    static double g = 9.8;
-    // public static double X1(double time)
-    // {
-    //     return Int(Int((double d) => _m2 * ));
-    // }
-    // public static double X2(double time)
-    // {
-
-    // }
-    // public static double X3(double time)
-    // {
-
-    // }
-    // public static double Y1(double time)
-    // {
-
-    // }
-    // public static double Y2(double time)
-    // {
-
-    // }
-    // public static double Y3(double time)
-    // {
-
-    // }
+    public static Func<double, double, Complex> Int(Func<Complex, Complex> func, double dx = 0.01)
+    {
+        return (double a, double b) =>
+        {
+            Complex acc = 0;
+            for (double i = a; i < b; i += dx)
+            {
+                acc += func(i);
+            }
+            return acc;
+        };
+    }
+    public static Complex Gamma(Complex value)
+    {
+        return Int(c => Pow(-Log(c), value - 1), 0.001)(0, 1);
+    }
 }
 class Matrix3
 {
