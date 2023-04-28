@@ -24,6 +24,8 @@
 //     bool[,,] _field;
 //     int _x, _y, _z;
 //     int[,] _depthMap;
+//     int[] _birth = new int[] { 5 };
+//     int[] _survival = new int[] { 4, 5 };
 //     enum Rules
 //     {
 //         Life,
@@ -46,6 +48,34 @@
 //         KeyDown += ProcessInput;
 //         _timer.Start();
 //     }
+//     void Add(int x, int y, int z)
+//     {
+//         _field[x, y, z] = true;
+//         if (z < _depthMap[x, y])
+//         {
+//             GetDepth(x, y);
+//         }
+//     }
+//     void Add(int x, int y, int z, bool[,,] field)
+//     {
+//         field[x, y, z] = true;
+//         if (z < _depthMap[x, y])
+//         {
+//             GetDepth(x, y);
+//         }
+//     }
+//     void GetDepth(int xColumn, int yColumn)
+//     {
+//         for (int z = 0; z < _field.GetLength(2); z++)
+//         {
+//             if (_field[xColumn, yColumn, z])
+//             {
+//                 _depthMap[xColumn, yColumn] = z;
+//                 return;
+//             }
+//         }
+//         _depthMap[xColumn, yColumn] = -1;
+//     }
 //     private void Tick(object? sender, EventArgs e)
 //     {
 //         _bitmap.Lock();
@@ -53,7 +83,7 @@
 //         {
 //             for (int x = 0; x < _bitmap.PixelWidth; x++)
 //             {
-//                 var c = (byte)(_field[x / 20, y / 20, _z] ? 0 : 255);
+//                 var c = (byte)(_depthMap[x / 20, y / 20] * 6);
 //                 var color = Color.FromRgb(c, c, c);
 //                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
 //                 unsafe
@@ -196,14 +226,14 @@
 //                                 {
 //                                     if (count == 4 || count == 5)
 //                                     {
-//                                         newField[column, row, layer] = true;
+//                                         Add(column, row, layer);
 //                                     }
 //                                 }
 //                                 else
 //                                 {
 //                                     if (count == 5)
 //                                     {
-//                                         newField[column, row, layer] = true;
+//                                         Add(column, row, layer);
 //                                     }
 //                                 }
 //                                 break;
@@ -286,19 +316,19 @@
 //                     _y++;
 //                 break;
 //             case Key.W:
-//             if (_z < _field.GetLength(2) - 1)
-//                 _z++;
+//                 if (_z < _field.GetLength(2) - 1)
+//                     _z++;
 //                 break;
 //             case Key.S:
-//             if (_z > 0)
-//                 _z--;
+//                 if (_z > 0)
+//                     _z--;
 //                 break;
 //             case Key.Space:
 //                 _field[_x, _y, _z] = !_field[_x, _y, _z];
 //                 break;
 
 //             case Key.N:
-//                 Evolution(new int[] { 3 }, new int[] { 2, 3 });
+//                 Evolution(_birth, _survival);
 //                 break;
 //             case Key.R:
 //                 OnRandom(0.1);
@@ -369,13 +399,9 @@
 //                         }
 //                         else
 //                         {
-//                             for (int i = layer; i < depth; i++)
+//                             if (_depthMap[column, row] < layer)
 //                             {
-//                                 if (_field[column, row, i])
-//                                 {
-//                                     _depthMap[column, row] = i;
-//                                     break;
-//                                 }
+//                                 GetDepth(column, row);
 //                             }
 //                         }
 //                     }
@@ -383,7 +409,7 @@
 //                     {
 //                         if (birth.Contains(GetNeighborCount(column, row, layer)))
 //                         {
-//                             newField[column, row, layer] = true;
+//                             Add(column, row, layer);
 //                             _depthMap[column, row] = _depthMap[column, row] > layer ? _depthMap[column, row] : layer;
 //                         }
 //                     }

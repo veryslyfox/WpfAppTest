@@ -4,7 +4,6 @@ using System.Windows;
 using System;
 using System.Windows.Media;
 namespace Objects.VolumeObjects;
-//ä
 class Vector3
 {
     public Point3 Begin { get; }

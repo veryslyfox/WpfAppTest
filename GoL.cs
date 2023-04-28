@@ -25,7 +25,7 @@ partial class MainWindow
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
     private int _enter;
     public int _f;
-    private int[,] _field = new int[800, 800];
+    private float[,] _field = new float[400, 400];
     private int _count;
     private string _survival;
     private string _birth;
@@ -34,11 +34,13 @@ partial class MainWindow
     private bool _stop;
     private string _nsurvival;
     private Color[] Colors = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255), Color.FromRgb(0, 0, 0), Color.FromRgb(255, 255, 255), Color.FromRgb(127, 255, 127) };
-    private double _prob;
-    private int _cell;
-    private double P1;
-    private double P2;
+    private float _prob;
+    private float _cell;
+    private float P1;
+    private float P2;
     private int _radius;
+    private int _column;
+    private int _row;
 
     enum Rules
     {
@@ -81,14 +83,14 @@ partial class MainWindow
         //B34w/S23"birth 3 4&conf212 survival 23"
         _birth = "3";
         _survival = "23";
-        _prob = 0.1;
+        _prob = 0.1F;
         _cell = 1;
         _nbirth = "";
         _nsurvival = "";
         _enter = 1;
-        _x = 400;
-        _y = 400;
-        _rules = Rules.Circle;
+        _x = 200;
+        _y = 200;
+        _rules = Rules.Conway;
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -104,7 +106,8 @@ partial class MainWindow
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = _field[x, y] == 0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
+                var c = (int)(_field[x / 2, y / 2] * 220);
+                var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -191,7 +194,7 @@ partial class MainWindow
         {
             return Color.FromRgb(lightness, lightness, lightness);
         }
-        var normalizer = (double)lightness / max;
+        var normalizer = (float)lightness / max;
         return Color.FromRgb((byte)(r * normalizer), ((byte)(g * normalizer)), ((byte)(b * normalizer)));
 
     }
@@ -263,7 +266,7 @@ partial class MainWindow
                 }
                 break;
             case Key.N:
-                Evolution2(null, new EventArgs());
+                Evolution(null, new EventArgs());
                 break;
             case Key.R:
                 OnRandom(_prob, _cell);
@@ -271,12 +274,12 @@ partial class MainWindow
             case Key.S:
                 if (_stop)
                 {
-                    _timer.Tick += Evolution2;
+                    _timer.Tick += Evolution;
                     _stop = false;
                 }
                 else
                 {
-                    _timer.Tick -= Evolution2;
+                    _timer.Tick -= Evolution;
                     _stop = true;
                 }
                 break;
@@ -323,59 +326,50 @@ partial class MainWindow
     }
     int GetNeighborCount(int column, int row)
     {
-        GetCell(0, 1);
-        GetCell(0, -1);
-        GetCell(1, 0);
-        GetCell(-1, 0);
-        GetCell(1, 1);
-        GetCell(-1, 1);
-        GetCell(1, -1);
-        GetCell(-1, -1);
-        return _count;
-        // var width = _field.GetLength(0);
-        // var height = _field.GetLength(1);
-        // var count = 0.0;
-        // if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
-        // {
-        //     count++;
-        // }
+        var width = _field.GetLength(0);
+        var height = _field.GetLength(1);
+        var count = 0;
+        if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+        {
+            count++;
+        }
 
-        // if (row != 0 && _field[column, row - 1] != 0)
-        // {
-        //     count++;
-        // }
+        if (row != 0 && _field[column, row - 1] != 0)
+        {
+            count++;
+        }
 
-        // if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
-        // {
-        //     count++;
-        // }
+        if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
+        {
+            count++;
+        }
 
-        // if (column < width - 1 && _field[column + 1, row] != 0)
-        // {
-        //     count++;
-        // }
+        if (column < width - 1 && _field[column + 1, row] != 0)
+        {
+            count++;
+        }
 
-        // if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
-        // {
-        //     count++;
-        // }
+        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
+        {
+            count++;
+        }
 
-        // if (row < height - 1 && _field[column, row + 1] != 0)
-        // {
-        //     count++;
-        // }
+        if (row < height - 1 && _field[column, row + 1] != 0)
+        {
+            count++;
+        }
 
-        // if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
-        // {
-        //     count++;
-        // }
+        if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
+        {
+            count++;
+        }
 
-        // if (column != 0 && _field[column - 1, row] != 0)
-        // {
-        //     count++;
-        // }
+        if (column != 0 && _field[column - 1, row] != 0)
+        {
+            count++;
+        }
 
-        // return count;
+        return count;
     }
     List<int> Neighbor(int column, int row)
     {
@@ -563,7 +557,7 @@ partial class MainWindow
         }
         return result;
     }
-    int GetNeighborCount(int column, int row, int cell)
+    int GetNeighborCount(int column, int row, float cell)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -636,7 +630,7 @@ partial class MainWindow
         {
             return;
         }
-        _count += _field[column, row];
+        //_count += _field[column, row];
     }
     int GetNeighborCount2(int column, int row, int cell)
     {
@@ -782,7 +776,7 @@ partial class MainWindow
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
-        var newField = new int[width, height];
+        var newField = new float[width, height];
         for (int row = 0; row < height; row++)
         {
             for (int column = 0; column < width; column++)
@@ -791,19 +785,20 @@ partial class MainWindow
                 {
                     case Rules.Conway:
                         {
-                            var count = GetNeighborCount(column, row);
+                            var count = 0.0;
+                            NeighborhoodActivate(column, row, d => {count += d;});
                             if (_field[column, row] != 0)
                             {
-                                if (count == 2 || count == 3)
+                                if (count > 2 || count < 3)
                                 {
-                                    newField[column, row] = _field[column, row] + 1;
+                                    newField[column, row] = _field[column, row];
                                 }
                             }
                             else
                             {
-                                if (count is 3)
+                                if (count > 3 || count < 4)
                                 {
-                                    newField[column, row] = 1;
+                                    newField[column, row] = (float)(count / 3);
                                 }
                             }
                             break;
@@ -1192,10 +1187,10 @@ partial class MainWindow
                             }
                             else
                             {
-                                // if (GetHexNeighborCount(column, row))
-                                // {
-                                //     newField[column, row] = _field[column, row];
-                                // }
+                                if (GetHexNeighborCount(column, row) == 0)
+                                {
+                                    newField[column, row] = _field[column, row];
+                                }
                             }
                             break;
                         }
@@ -1320,7 +1315,7 @@ partial class MainWindow
 
         _field = newField;
     }
-    void NeighborhoodActivate(int column, int row, Action<int> action)
+    void NeighborhoodActivate(int column, int row, Action<float> action)
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
@@ -1370,7 +1365,7 @@ partial class MainWindow
         {
             var width = _field.GetLength(0);
             var height = _field.GetLength(1);
-            var newField = new int[width, height];
+            var newField = new float[width, height];
             for (int row = 0; row < height; row++)
             {
                 for (int column = 0; column < width; column++)
@@ -1400,7 +1395,7 @@ partial class MainWindow
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
-        var newField = new int[width, height];
+        var newField = new float[width, height];
         for (int row = 0; row < height; row++)
         {
             for (int column = 0; column < width; column++)
@@ -1429,7 +1424,7 @@ partial class MainWindow
         {
             var width = _field.GetLength(0);
             var height = _field.GetLength(1);
-            var newField = new int[width, height];
+            var newField = new float[width, height];
             for (int row = 0; row < height; row++)
             {
                 for (int column = 0; column < width; column++)
@@ -1509,7 +1504,7 @@ partial class MainWindow
         Console.CursorLeft = _x;
         Console.CursorTop = _y;
     }
-    void OnRandom(double probability, int cell)
+    void OnRandom(float probability, float cell)
     {
         var rng = new Random();
         for (int row = 0; row < _field.GetLength(1); row++)
