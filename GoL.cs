@@ -785,7 +785,7 @@ partial class MainWindow
                 {
                     case Rules.Conway:
                         {
-                            var count = 0.0;
+                            var count = 0.0F;
                             NeighborhoodActivate(column, row, d => {count += d;});
                             if (_field[column, row] != 0)
                             {
@@ -1319,42 +1319,42 @@ partial class MainWindow
     {
         var width = _field.GetLength(0);
         var height = _field.GetLength(1);
-        if (row > 0 && column > 0 && _field[column - 1, row - 1] == 3)
+        if (row > 0 && column > 0)
         {
             action(_field[column - 1, row - 1]);
         }
 
-        if (row > 0 && _field[column, row - 1] == 3)
+        if (row > 0)
         {
             action(_field[column, row - 1]);
         }
 
-        if (row > 0 && column < width - 1 && _field[column + 1, row - 1] == 3)
+        if (row > 0 && column < width - 1)
         {
             action(_field[column + 1, row - 1]);
         }
 
-        if (column < width - 1 && _field[column + 1, row] == 3)
+        if (column < width - 1)
         {
             action(_field[column + 1, row]);
         }
 
-        if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] == 3)
+        if (column < width - 1 && row < height - 1)
         {
             action(_field[column + 1, row + 1]);
         }
 
-        if (row < height - 1 && _field[column, row + 1] == 3)
+        if (row < height - 1)
         {
             action(_field[column, row + 1]);
         }
 
-        if (row < height - 1 && column > 0 && _field[column - 1, row + 1] == 3)
+        if (row < height - 1 && column > 0)
         {
             action(_field[column - 1, row + 1]);
         }
 
-        if (column > 0 && _field[column - 1, row] == 3)
+        if (column > 0)
         {
             action(_field[column - 1, row]);
         }
