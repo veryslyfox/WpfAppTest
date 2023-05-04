@@ -339,7 +339,7 @@
 //     {
 //         Console.CursorLeft = 0;
 //         Console.CursorTop = 0;
-//         // for (int layer = 0; layer < _field.GetLength(2) - 1; layer++)
+//         for (int layer = 0; layer < _field.GetLength(2) - 1; layer++)
 //         {
 //             for (int row = 0; row < _field.GetLength(1) - 1; row++)
 //             {

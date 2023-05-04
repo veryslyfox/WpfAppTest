@@ -9,6 +9,7 @@ using System.Windows.Media;
 using VolumeObjects;
 using Vector = Objects.Vector;
 using System.Collections.Generic;
+using Objects.Data;
 
 static class SpecialMath
 {
@@ -101,19 +102,23 @@ static class SpecialMath
         var a = k / n * 2 * Math.PI;
         return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
     }
-    public static int DotFromMandelbrotSet(double x, double y, double k)
+    public static int DotFromMandelbrotSet(double x, double y)
     {
         var c = new Complex(0, 0);
         var a = new Complex(x, y);
         for (int i = 0; i < 30; i++)
         {
-            c = Pow(c, k) + a;
-            if (c.Magnitude > k)
+            c = c * c + a;
+            if (c.Magnitude > 2)
             {
                 return 30 - i;
             }
         }
         return 0;
+    }
+    static Complex Absolute(Complex c)
+    {
+        return new(Abs(c.Real), Abs(c.Imaginary));
     }
     public static Complex[] NewtonFractalRoots(int n)
     {
@@ -232,10 +237,6 @@ static class SpecialMath
             }
             return acc;
         };
-    }
-    public static Complex Gamma(Complex value)
-    {
-        return Int(c => Pow(-Log(c), value - 1), 0.001)(0, 1);
     }
 }
 class Matrix3
