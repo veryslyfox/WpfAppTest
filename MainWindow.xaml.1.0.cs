@@ -56,7 +56,8 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                byte c = _noise.Function(x / 80.0, y / 80.0);
+                var c = (int)(_noise.Function(x / 80.0, y / 80.0) * 180);
+                var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -67,7 +68,6 @@ public partial class MainWindow : Window
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
         _f += 0.1;
-        _particles = new HashSet<Particle2> { new(400, 400, 1, 0) };
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
@@ -215,11 +215,15 @@ class Noise2D
             for (int column = 0; column < Freq; column++)
             {
                 var dx = column - x;
-                var dy = column - y;
-                sum += Exp(-dx * dx - dy * dy) * Dots[column][row];
+                var dy = row - y;
+                sum += Cos(dx) * Sin(dy) * Dots[column][row];
             }
         }
         return sum;
+    }
+    static double Relu(double value)
+    {
+        return value < 0 ? 0 : value;
     }
     double[][] Dots;
 

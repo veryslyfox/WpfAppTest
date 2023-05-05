@@ -81,15 +81,15 @@
 //     {
 //         _stop = true;
 //         //B34w/S23"birth 3 4&conf212 survival 23"
-//         _birth = "123456";
-//         _survival = "012345678";
+//         _birth = "";
+//         _survival = "";
 //         _prob = 0.1;
 //         _cell = 1;
 //         _nbirth = "";
 //         _nsurvival = "";
 //         _enter = 1;
 //         _x = 200;
-//         _y = 0;
+//         _y = 200;
 //         _rules = Rules.Triangle;
 //         InitializeComponent();
 //         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
@@ -265,7 +265,7 @@
 //                 }
 //                 break;
 //             case Key.N:
-//                 Evolution(null, new EventArgs());
+//                 Evolution2(null, new EventArgs());
 //                 break;
 //             case Key.R:
 //                 OnRandom(_prob, _cell);
@@ -273,12 +273,12 @@
 //             case Key.S:
 //                 if (_stop)
 //                 {
-//                     _timer.Tick += Evolution;
+//                     _timer.Tick += Evolution2;
 //                     _stop = false;
 //                 }
 //                 else
 //                 {
-//                     _timer.Tick -= Evolution;
+//                     _timer.Tick -= Evolution2;
 //                     _stop = true;
 //                 }
 //                 break;
@@ -330,17 +330,17 @@
 //         var count = 0;
 //         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
 //         {
-//             count++;
+//             count--;
 //         }
 
 //         if (row != 0 && _field[column, row - 1] != 0)
 //         {
-//             count += 2;
+//             count++;
 //         }
 
 //         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
 //         {
-//             count++;
+//             count--;
 //         }
 
 //         if (column < width - 1 && _field[column + 1, row] != 0)
@@ -350,17 +350,17 @@
 
 //         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
 //         {
-//             count++;
+//             count--;
 //         }
 
 //         if (row < height - 1 && _field[column, row + 1] != 0)
 //         {
-//             count += 2;
+//             count++;
 //         }
 
 //         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
 //         {
-//             count++;
+//             count--;
 //         }
 
 //         if (column != 0 && _field[column - 1, row] != 0)
