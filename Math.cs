@@ -239,6 +239,20 @@ static class SpecialMath
         };
     }
 }
+class LSystem
+{
+    public LSystem(int[][] rules)
+    {
+        Rules = rules;
+    }
+
+    public int[][] Rules { get; }
+
+    public int[] Next(int[] array)
+    {
+        return array.SelectMany(i => Rules[i]).ToArray();
+    }
+}
 class Matrix3
 {
     public Matrix3(double m11, double m12, double m13, double m21, double m22, double m23, double m31, double m32, double m33)
