@@ -1,3 +1,4 @@
+// using System.Windows.Controls;
 // using System;
 // using System.IO;
 // using System.Diagnostics;
@@ -79,10 +80,12 @@
 //     }
 //     public MainWindow()
 //     {
+    
+        
 //         _stop = true;
 //         //B34w/S23"birth 3 4&conf212 survival 23"
-//         _birth = "";
-//         _survival = "";
+//         _birth = "3";
+//         _survival = "2";
 //         _prob = 0.1;
 //         _cell = 1;
 //         _nbirth = "";
@@ -330,7 +333,7 @@
 //         var count = 0;
 //         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
 //         {
-//             count--;
+//             count+=2;
 //         }
 
 //         if (row != 0 && _field[column, row - 1] != 0)
@@ -340,7 +343,7 @@
 
 //         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
 //         {
-//             count--;
+//             count+=2;
 //         }
 
 //         if (column < width - 1 && _field[column + 1, row] != 0)
@@ -350,7 +353,7 @@
 
 //         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
 //         {
-//             count--;
+//             count++;
 //         }
 
 //         if (row < height - 1 && _field[column, row + 1] != 0)
@@ -360,7 +363,7 @@
 
 //         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
 //         {
-//             count--;
+//             count++;
 //         }
 
 //         if (column != 0 && _field[column - 1, row] != 0)
@@ -629,7 +632,7 @@
 //         {
 //             return;
 //         }
-//         //_count += _field[column, row];
+//         _count += _field[column, row];
 //     }
 //     int GetNeighborCount2(int column, int row, int cell)
 //     {

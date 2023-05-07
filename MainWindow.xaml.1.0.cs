@@ -17,6 +17,8 @@ using System.Numerics;
 using Objects.VolumeObjects;
 using System.Threading;
 using Vector = System.Windows.Vector;
+using System.Windows.Controls;
+
 namespace WpfApp1;
 
 public partial class MainWindow : Window
@@ -32,9 +34,11 @@ public partial class MainWindow : Window
     Roller R2 = new Roller(-PI / 3);
     private double _f = 0;
     private Noise2D _noise;
+    private TextBox _tbSettingText = new TextBox();
     public MainWindow()
     {
-        _noise = new Noise2D(10, _rng);
+        _tbSettingText.Text = "Initial text contents of the TextBox.";  
+        _noise = new Noise2D(20, _rng);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -56,7 +60,7 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = (int)(_noise.Function(x / 80.0, y / 80.0) * 180);
+                var c = (int)(_noise.Function(x / 40.0, y / 40.0) * 80);
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
@@ -216,14 +220,10 @@ class Noise2D
             {
                 var dx = column - x;
                 var dy = row - y;
-                sum += Cos(dx) * Sin(dy) * Dots[column][row];
+                sum += Exp(-dx * dx - dy * dy) * Dots[column][row];
             }
         }
         return sum;
-    }
-    static double Relu(double value)
-    {
-        return value < 0 ? 0 : value;
     }
     double[][] Dots;
 
