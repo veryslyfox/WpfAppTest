@@ -34,12 +34,11 @@ public partial class MainWindow : Window
     Roller R2 = new Roller(-PI / 3);
     private double _f = 0;
     private Noise2D _noise;
-    private TextBox _tbSettingText = new TextBox();
     public MainWindow()
     {
+        InitializeComponent();
         _tbSettingText.Text = "Initial text contents of the TextBox.";  
         _noise = new Noise2D(20, _rng);
-        InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
         _timer.Interval = TimeSpan.FromSeconds(0.000001);
