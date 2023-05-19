@@ -1,0 +1,123 @@
+B25/S3467/n
+B2/S3467/n
+B26/S3467/n
+B2/S3456/48
+public static Int32Rect GetActiveSize(bool[,] image)
+    {
+        var xProj = new bool[image.GetLength(0)];
+        var yProj = new bool[image.GetLength(1)];
+        for (int y = 0; y < image.GetLength(1); y++)
+        {
+            for (int x = 0; x < image.GetLength(0); x++)
+            {
+                var value = image[x, y];
+                xProj[x] = value;
+                yProj[y] = value;
+            }
+        }
+        var minX = -1;
+        var maxX = 0;
+        for (int i = 0; i < xProj.Length; i++)
+        {
+            if (xProj[i])
+            {
+                maxX = maxX < i ? i : maxX;
+                if (minX == -1)
+                {
+                    minX = i;
+                }
+            }
+        }
+        var minY = -1;
+        var maxY = 0;
+        for (int i = 0; i < yProj.Length; i++)
+        {
+            if (yProj[i])
+            {
+                maxY = maxY < i ? i : maxY;
+                if (minY == -1)
+                {
+                    minY = i;
+                }
+            }
+        }
+        minX = minX == -1 ? 0 : minX;
+        minY = minY == -1 ? 0 : minY;
+        return new(minX, minY, maxX - minX, maxY - minY);
+    }
+    class Noise
+{
+    public Noise(int freq, Random random)
+    {
+        Dots = new double[freq];
+        Dots = Dots.Select(a => random.NextDouble()).ToArray();
+    }
+    public double Function(double value)
+    {
+        return Dots.Select((x, n) => x * Exp(-(value - n) * (value - n))).Sum();
+    }
+    double[] Dots;
+}
+class Noise2D
+{
+    public Noise2D(int freq, Random random)
+    {
+        Dots = new double[freq][];
+        for (int i = 0; i < freq; i++)
+        {
+            var rand = new double[freq];
+            rand = rand.Select(a => random.NextDouble()).ToArray();
+            Dots[i] = rand;
+        }
+        Freq = freq;
+    }
+    public double Function(double x, double y)
+    {
+        var sum = 0.0;
+        for (int row = 0; row < Freq; row++)
+        {
+            for (int column = 0; column < Freq; column++)
+            {
+                var dx = column - x;
+                var dy = row - y;
+                sum += Exp(-dx * dx - dy * dy) * Dots[column][row];
+            }
+        }
+        return sum;
+    }
+    double[][] Dots;
+
+    public int Freq { get; }
+}
+class Sand
+{
+    public Sand(int[,] ints)
+    {
+        Values = ints;
+        Width = ints.GetLength(1);
+        Height = ints.GetLength(0);
+    }
+
+    public int[,] Values { get; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+
+    public void Next()
+    {
+        for (int column = 0; column < Height - 1; column++)
+        {
+            for (int row = 0; row < Width - 1; row++)
+            {
+                if (Values[column, row] > 3)
+                {
+                    Values[column, row] -= 4;
+                    Values[column + 1, row]++;
+                    Values[column - 1, row]++;
+                    Values[column, row - 1]++;
+                    Values[column, row + 1]++;
+                }
+            }
+        }
+    }
+
+}

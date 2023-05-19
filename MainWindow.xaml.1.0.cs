@@ -23,35 +23,45 @@ namespace WpfApp1;
 
 public partial class MainWindow : Window
 {
+    private Color[] Colors = new Color[] { Color.FromRgb(0, 0, 0), Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255), Color.FromRgb(0, 0, 0), Color.FromRgb(255, 255, 255), Color.FromRgb(127, 255, 127) };
     private readonly DispatcherTimer _timer = new();
     private readonly WriteableBitmap _bitmap;
     private readonly Random _rng = new();
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-    private int[,] _space = new int[800, 800];
+    private int[,] _space = new int[200, 200];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
-    private HashSet<Particle2> _particles = new HashSet<Particle2> { new(400, 400, 1, 0) };
+    private Point[] _points = new Point[] { new Point(400, 400) };
+    private int _size = 100;
     Roller R1 = new Roller(PI / 3);
     Roller R2 = new Roller(-PI / 3);
     private double _f = 0;
-    private Noise2D _noise;
     private int[] array = new int[] { 0, 1, 2, 3 };
-    private LSystem _lSystem = new LSystem(new int[][] { new int[] { 1, 2, 3 }, new int[] { 0, 2, 3 }, new int[] { 0, 1, 3 }, new int[] { 1, 2, 3 } });
+    Dictionary<Direct, int> DirectX = new Dictionary<Direct, int>
+    {
+        {Direct.L, -1},
+        {Direct.U, 0},
+        {Direct.R, 1},
+        {Direct.D, 0},
+    };
+    Dictionary<Direct, int> DirectY = new Dictionary<Direct, int>
+    {
+        {Direct.L, 0},
+        {Direct.U, 1},
+        {Direct.R, 0},
+        {Direct.D, -1},
+    };
+    int[] Roll = new int[] { 1, 0, 1 };
+    enum Direct
+    {
+        L,
+        U,
+        R,
+        D,
+    }
     public MainWindow()
     {
-        var x = 400;
-        var y = 400;
-        for (int i = 0; i < 5; i++)
-        {
-            array = _lSystem.Next(array);
-        }
-        foreach (var i in array)
-        {
-            x += (i >> 1) * 2 - 1;
-            y += (i & 1) * 2 - 1;
-            _space[x, y] = 1 - _space[x, y];
-        }
+
         InitializeComponent();
-        _noise = new Noise2D(20, _rng);
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
         _timer.Interval = TimeSpan.FromSeconds(0.000001);
@@ -68,6 +78,17 @@ public partial class MainWindow : Window
     private void KeyHandler(object sender, KeyEventArgs args)
     {
     }
+    double F(double val)
+    {
+        if (val < 2)
+        {
+            return val;
+        }
+        else
+        {
+            return val * F(val - 1);
+        }
+    }
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
@@ -75,7 +96,7 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = _space[x, y] == 0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
+                var color = 800 - y < F(x / 80.0) * 80.0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -85,7 +106,7 @@ public partial class MainWindow : Window
         }
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
-        _f += 0.1;
+        _f += 1;
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
@@ -167,79 +188,25 @@ public partial class MainWindow : Window
         return Interpolation(result, Color.FromRgb(v, v, v), s);
     }
 }
-class Sand
+class LorenzDot
 {
-    public Sand(int[,] ints)
+    public LorenzDot(double x, double y, double z, double dt = 0.001)
     {
-        Values = ints;
-        Width = ints.GetLength(1);
-        Height = ints.GetLength(0);
+        X = x;
+        Y = y;
+        Z = z;
+        Dt = dt;
     }
 
-    public int[,] Values { get; }
-    public int Width { get; set; }
-    public int Height { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Z { get; set; }
+    public double Dt { get; }
 
-    public void Next()
+    void Next()
     {
-        for (int column = 0; column < Height - 1; column++)
-        {
-            for (int row = 0; row < Width - 1; row++)
-            {
-                if (Values[column, row] > 3)
-                {
-                    Values[column, row] -= 4;
-                    Values[column + 1, row]++;
-                    Values[column - 1, row]++;
-                    Values[column, row - 1]++;
-                    Values[column, row + 1]++;
-                }
-            }
-        }
+        X += 10 * (Y - X) * Dt;
+        Y += (X * (28 - Z) - Y) * Dt;
+        Z += (X * Y + Z * 8 / 3) * Dt;
     }
-
-}
-class Noise
-{
-    public Noise(int freq, Random random)
-    {
-        Dots = new double[freq];
-        Dots = Dots.Select(a => random.NextDouble()).ToArray();
-    }
-    public double Function(double value)
-    {
-        return Dots.Select((x, n) => x * Exp(-(value - n) * (value - n))).Sum();
-    }
-    double[] Dots;
-}
-class Noise2D
-{
-    public Noise2D(int freq, Random random)
-    {
-        Dots = new double[freq][];
-        for (int i = 0; i < freq; i++)
-        {
-            var rand = new double[freq];
-            rand = rand.Select(a => random.NextDouble()).ToArray();
-            Dots[i] = rand;
-        }
-        Freq = freq;
-    }
-    public double Function(double x, double y)
-    {
-        var sum = 0.0;
-        for (int row = 0; row < Freq; row++)
-        {
-            for (int column = 0; column < Freq; column++)
-            {
-                var dx = column - x;
-                var dy = row - y;
-                sum += Exp(-dx * dx - dy * dy) * Dots[column][row];
-            }
-        }
-        return sum;
-    }
-    double[][] Dots;
-
-    public int Freq { get; }
 }
