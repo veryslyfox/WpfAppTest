@@ -24,7 +24,6 @@
 //     private readonly WriteableBitmap _bitmap;
 //     private readonly Random _rng = new();
 //     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-//     private int _enter;
 //     public int _f;
 //     private int[,] _field = new int[400, 400];
 //     private int _count;
@@ -32,15 +31,9 @@
 //     private string _birth;
 //     private int _generations;
 //     private bool _stop;
-//     private Color[] Colors = new Color[] { Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255), Color.FromRgb(0, 0, 0), Color.FromRgb(255, 255, 255), Color.FromRgb(127, 255, 127) };
+//     private Color[] Colors;
 //     private double _prob;
 //     private int _cell;
-//     private int P1;
-//     private int P2;
-//     private int _radius;
-//     private int _column;
-//     private int _row;
-
 //     enum Rules
 //     {
 //         Conway,
@@ -75,20 +68,34 @@
 //         Wireworld,
 //         LogicRule,
 //         War,
+//         Billiard,
 //     }
 //     public MainWindow()
 //     {
-//         _birth = GetRANT(0.02);
-//         _survival = GetRANT(0.02);
+//         InitializeComponent();
+//         _birth = "2";
+//         _survival = "3456";
+//         _generations = 48;
+//         Colors = new Color[_generations];
+//         var step = 255 / _generations;
+//         for (int i = 0; i < _generations; i++)
+//         {
+//             Colors[_generations - i - 1] = FromRgb(255, 255, 255);//FromRgb(i * step, i * step, i * step);
+//         }
 //         _stop = true;
 //         //B34w/S23"birth 3 4&conf212 survival 23"
 //         _prob = 0.1;
 //         _cell = 1;
-//         _enter = 1;
 //         _x = 200;
 //         _y = 200;
-//         _rules = Rules.Triangle;
-//         InitializeComponent();
+//         for (int x = 0; x < 800; x++)
+//         {
+//             for (int y = 0; y < 800; y++)
+//             {
+//                 //_field[x, y] = _rng.Next(_values);
+//             }
+//         }
+//         _rules = Rules.Ulam;
 //         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
 //         image.Source = _bitmap;
 //         _timer.Interval = TimeSpan.FromSeconds(0.01);
@@ -103,7 +110,7 @@
 //         {
 //             for (int x = 0; x < _bitmap.PixelWidth; x++)
 //             {
-//                 var color = _field[x / 2, y / 2] == 0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
+//                 var color = _field[x / 2, y / 2] == 0 ? FromRgb(0, 0, 0) : Colors[_field[x / 2, y / 2] - 1];
 //                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
 //                 unsafe
 //                 {
@@ -262,7 +269,7 @@
 //                 }
 //                 break;
 //             case Key.N:
-//                 Evolution2(null, new EventArgs());
+//                 Evolution3(null, new EventArgs());
 //                 break;
 //             case Key.R:
 //                 OnRandom(_prob, _cell);
@@ -270,12 +277,12 @@
 //             case Key.S:
 //                 if (_stop)
 //                 {
-//                     _timer.Tick += Evolution2;
+//                     _timer.Tick += Evolution3;
 //                     _stop = false;
 //                 }
 //                 else
 //                 {
-//                     _timer.Tick -= Evolution2;
+//                     _timer.Tick -= Evolution3;
 //                     _stop = true;
 //                 }
 //                 break;
@@ -768,6 +775,33 @@
 
 //         return count;
 //     }
+//     enum Reflect
+//     {
+//         Never,
+//         Inverse,
+//         Up,
+//         Down,
+//         Left,
+//         Right,
+//     }
+//     int[] _reflector = new int[]
+//     {
+//         1, 2, 3, 4, 3, 4, 1, 2, 3, 4, 0, 0, 0, 0, 1, 2, 2, 0, 4, 0, 0, 1, 0, 3
+//     };
+//     Dictionary<string, Reflect> _edgeToReflect = new Dictionary<string, Reflect>
+//     {
+//         {"nn", Reflect.Never},
+//         {"ss", Reflect.Inverse},
+//         {"sb", Reflect.Inverse},
+//         {"bs", Reflect.Inverse},
+//         {"bb", Reflect.Inverse},
+//         {"sn", Reflect.Left},
+//         {"bn", Reflect.Right},
+//         {"ns", Reflect.Up},
+//         {"nb", Reflect.Down},
+//     };
+//     int[] OffsetX = new int[] { 0, 1, 1, -1, -1 };
+//     int[] OffsetY = new int[] { 0, 1, -1, 1, -1 };
 //     void Evolution(object? sender, EventArgs args)
 //     {
 //         var width = _field.GetLength(0);
@@ -812,23 +846,38 @@
 
 //                     case Rules.Ulam:
 //                         {
-//                             var count = GetNeighborCount2(column, row);
-//                             if (_field[column, row] != 0)
+//                             var count = GetNeighborCount(column, row, 1);
+//                             if (_field[column, row] == 0)
 //                             {
-//                                 if (_field[column, row] < 3)
+//                                 if (count == 1 && _rng.NextDouble() < 0.2)
 //                                 {
-//                                     _field[column, row] += 1;
+//                                     newField[column, row] = 1;
 //                                 }
 //                             }
-//                             else
+//                             else if (_rng.NextDouble() < 0.2)
 //                             {
-//                                 if (count == 1)
-//                                 {
-//                                     newField[column, row] = _field[column, row] + 1;
-//                                 }
+//                                 newField[column, row] = _field[column, row];
 //                             }
 //                             break;
 //                         }
+//                     case Rules.Billiard:
+//                         {
+
+//                             if (_field[column, row] == 0)
+//                             {
+//                                 break;
+//                             }
+//                             char Edge(int number)
+//                             {
+//                                 return number < 800 ? number > 0 ? 'n' : 's' : 'b';
+//                             }
+//                             var reflectType = _edgeToReflect[Edge(column).ToString() + Edge(row)];
+//                             _field[column, row] = _reflector[_field[column, row] + 4 * (int)reflectType];
+//                             _field[OffsetX[_field[column, row]] + column, OffsetY[_field[column, row]]] = _field[column, row];
+//                             _field[column, row] = 0;
+//                             break;
+//                         }
+
 //                     case Rules.HighLife:
 //                         {
 //                             var count = GetNeighborCount(column, row);
@@ -1086,17 +1135,17 @@
 //                         }
 //                         break;
 //                     case Rules.Circle:
-//                         var next = (_field[column, row] + 1) % 3;
-//                         if (GetNeighborCount(column, row, next) > 2 || _rng.NextDouble() < 0.01)
+//                         var next = (_field[column, row] + 1) % 15;
+//                         if (GetNeighborCount2(column, row, next) > 0 && _rng.NextDouble() < 0.8)
 //                         {
 //                             newField[column, row] = next;
-//                             break;
 //                         }
 //                         else
 //                         {
 //                             newField[column, row] = _field[column, row];
 //                         }
 //                         break;
+
 //                     case Rules.SeedsLight:
 //                         if (GetNeighborCount(column, row) is 1 or 2 && _field[column, row] != 0)
 //                         {
@@ -1239,11 +1288,11 @@
 //                     case Rules.Social:
 //                         if (_field[column, row] == 0)
 //                         {
-//                             _field[column, row] = _rng.NextDouble() < P1 ? 0 : 1;
+//                             _field[column, row] = _rng.NextDouble() < 0.5 ? 0 : 1;
 //                         }
 //                         if (_field[column, row] == 1)
 //                         {
-//                             _field[column, row] = _rng.NextDouble() < P2 ? 1 : 0;
+//                             _field[column, row] = _rng.NextDouble() < 0.5 ? 1 : 0;
 //                         }
 //                         if (_field[column, row] != 0)
 //                         {
@@ -1348,6 +1397,30 @@
 //             action(_field[column - 1, row]);
 //         }
 //     }
+//     void NeighborhoodActivate2(int column, int row, Action<int> action)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         if (row > 0)
+//         {
+//             action(_field[column, row - 1]);
+//         }
+
+//         if (column < width - 1)
+//         {
+//             action(_field[column + 1, row]);
+//         }
+
+//         if (row < height - 1)
+//         {
+//             action(_field[column, row + 1]);
+//         }
+
+//         if (column > 0)
+//         {
+//             action(_field[column - 1, row]);
+//         }
+//     }
 //     public void Evolution(string birth, string survival)
 //     {
 //         for (int i = 0; i < 10; i++)
@@ -1385,33 +1458,140 @@
 //         for (int i = 0; i < 2; i++)
 //         {
 //             var width = _field.GetLength(0);
-//         var height = _field.GetLength(1);
-//         var newField = new int[width, height];
-//         for (int row = 0; row < height; row++)
-//         {
-//             for (int column = 0; column < width; column++)
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
 //             {
-//                 if (_field[column, row] != 0)
+//                 for (int column = 0; column < width; column++)
 //                 {
-//                     if (_survival.Contains(GetNeighborCount(column, row).ToString() + ','))
+//                     if (_field[column, row] != 0)
 //                     {
-//                         newField[column, row] = _field[column, row] + 1;
+//                         if (_survival.Contains(GetNeighborCount(column, row).ToString() + ','))
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
 //                     }
-//                 }
-//                 else
-//                 {
-//                     if (_birth.Contains(GetNeighborCount(column, row).ToString() + ',') && _field[column, row] == 0)
+//                     else
 //                     {
-//                         newField[column, row] = 1;
+//                         if (_birth.Contains(GetNeighborCount(column, row).ToString() + ',') && _field[column, row] == 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
 //                     }
 //                 }
 //             }
+//             _field = newField;
 //         }
-//         _field = newField;    
+
+//     }
+//     int _phase;
+//     void EvolutionBlock(object? sender, EventArgs args)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         for (int i = 0; i < 2; i++)
+//         {
+//             var newField = new int[width, height];
+//             _phase = 1 - _phase;
+//             var max = (_field.GetLength(0) - _phase) / 2;
+//             for (int y = 0; y < 2; y++)
+//             {
+//                 for (int x = 0; x < _field.GetLength(0); x++)
+//                 {
+//                     _field[x, y] = 0;
+//                 }
+//             }
+//             for (int y = _field.GetLength(1) - 2; y < _field.GetLength(1); y++)
+//             {
+//                 for (int x = 0; x < _field.GetLength(0); x++)
+//                 {
+//                     _field[x, y] = 0;
+//                 }
+//             }
+//             for (int y = 0; y < _field.GetLength(1); y++)
+//             {
+//                 for (int x = 0; x < 2; x++)
+//                 {
+//                     _field[x, y] = 0;
+//                 }
+//             }
+//             for (int y = 0; y < _field.GetLength(1); y++)
+//             {
+//                 for (int x = _field.GetLength(0) - 2; x < _field.GetLength(0); x++)
+//                 {
+//                     _field[x, y] = 0;
+//                 }
+//             }
+//             for (int x = 0; x < max; x++)
+//             {
+//                 for (int y = 0; y < max; y++)
+//                 {
+//                     var X = 2 * x + _phase;
+//                     var Y = 2 * y + _phase;
+//                     var a = _field[X, Y];
+//                     var b = _field[X + 1, Y];
+//                     var c = _field[X, Y + 1];
+//                     var d = _field[X + 1, Y + 1];
+//                     if (a + b + c + d is 0 or 1)
+//                     {
+//                         newField[X, Y] = a;
+//                         newField[X + 1, Y] = b;
+//                         newField[X, Y + 1] = c;
+//                         newField[X + 1, Y + 1] = d;
+//                     }
+//                     else
+//                     {
+//                         newField[X, Y] = 1 - a;
+//                         newField[X + 1, Y] = 1 - b;
+//                         newField[X, Y + 1] = 1 - c;
+//                         newField[X + 1, Y + 1] = 1 - d;
+//                     }
+//                 }
+//             }
+//             _field = newField;
 //         }
-        
 //     }
 //     public void Evolution3(object? sender, EventArgs args)
+//     {
+//         for (int i = 0; i < 2; i++)
+//         {
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
+//             {
+//                 for (int column = 0; column < width; column++)
+//                 {
+//                     if (_field[column, row] != 0)
+//                     {
+//                         if (_survival.Contains(GetNeighborCount(column, row, 1).ToString()))
+//                         {
+//                             newField[column, row] = _field[column, row];
+//                         }
+//                         else
+//                         {
+//                             if (_field[column, row] == _generations)
+//                             {
+//                                 newField[column, row] = 0;
+//                                 continue;
+//                             }
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                     }
+//                     else
+//                     {
+//                         if (_birth.Contains(GetNeighborCount(column, row, 1).ToString()))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                     }
+//                 }
+//             }
+//             _field = newField;
+//         }
+
+//     }
+//     public void Evolution4(object? sender, EventArgs args)
 //     {
 //         for (int i = 0; i < 2; i++)
 //         {

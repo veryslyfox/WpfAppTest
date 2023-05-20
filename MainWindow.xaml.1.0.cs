@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     private readonly WriteableBitmap _bitmap;
     private readonly Random _rng = new();
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-    private int[,] _space = new int[200, 200];
+    private int[,] _space = new int[800, 800];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
     private Point[] _points = new Point[] { new Point(400, 400) };
     private int _size = 100;
@@ -58,9 +58,17 @@ public partial class MainWindow : Window
         R,
         D,
     }
+    List<LorenzDot> _attractor = new List<LorenzDot>();
     public MainWindow()
     {
-
+        for (int i = 0; i < 100000; i++)
+        {
+            var r = 200;
+            var a = _rng.NextDouble() * 2 * PI;
+            var b = _rng.NextDouble() * 2 * PI;
+            _attractor.Add(new((r * Sin(a) * Cos(b)), r * Sin(a) * Sin(b), r * Sin(a)));
+        }
+        
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -89,14 +97,40 @@ public partial class MainWindow : Window
             return val * F(val - 1);
         }
     }
+    public bool[,] Convolution(bool[,] image, int radius, int min)
+    {
+
+        var result = image;
+        for (int row = radius; row < image.GetLength(1) - radius; row++)
+        {
+            for (int column = radius; column < image.GetLength(0) - radius; column++)
+            {
+                var sum = 0;
+                for (int xMove = -radius; xMove <= radius; xMove++)
+                {
+                    for (int yMove = -radius; yMove <= radius; yMove++)
+                    {
+                        sum += image[column + xMove, row + yMove] ? 1 : 0;
+                    }
+                }
+                result[column, row] = sum >= min;
+            }
+        }
+        return result;
+    }
     private void Tick(object? sender, EventArgs e)
     {
+        foreach (var item in _attractor)
+        {
+            item.Next(_space);
+        }
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = 800 - y < F(x / 80.0) * 80.0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
+                var c = 255 - _space[x, y];
+                var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -203,10 +237,12 @@ class LorenzDot
     public double Z { get; set; }
     public double Dt { get; }
 
-    void Next()
+    public void Next(int[,] proj)
     {
-        X += 10 * (Y - X) * Dt;
+        proj[(int)(Y + 400), (int)(Abs(Z + 400))] = 0;
+        X += 100 * (Y - X) * Dt;
         Y += (X * (28 - Z) - Y) * Dt;
         Z += (X * Y + Z * 8 / 3) * Dt;
+        proj[(int)(Abs(Y + 400)), (int)(Abs(Z + 400))] = 255;
     }
 }
