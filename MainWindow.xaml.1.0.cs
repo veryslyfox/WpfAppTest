@@ -34,8 +34,8 @@ public partial class MainWindow : Window
     private int _size = 100;
     Roller R1 = new Roller(PI / 3);
     Roller R2 = new Roller(-PI / 3);
-    private double _f = 0;
-    private int[] array = new int[] { 0, 1, 2, 3 };
+    private int _f = 0;
+    private int[] array = new int[200];
     Dictionary<Direct, int> DirectX = new Dictionary<Direct, int>
     {
         {Direct.L, -1},
@@ -51,6 +51,7 @@ public partial class MainWindow : Window
         {Direct.D, -1},
     };
     int[] Roll = new int[] { 1, 0, 1 };
+    public int _sorted;
     enum Direct
     {
         L,
@@ -58,17 +59,12 @@ public partial class MainWindow : Window
         R,
         D,
     }
-    List<LorenzDot> _attractor = new List<LorenzDot>();
     public MainWindow()
     {
-        for (int i = 0; i < 100000; i++)
+        for (int i = 0; i < 200; i++)
         {
-            var r = 200;
-            var a = _rng.NextDouble() * 2 * PI;
-            var b = _rng.NextDouble() * 2 * PI;
-            _attractor.Add(new((r * Sin(a) * Cos(b)), r * Sin(a) * Sin(b), r * Sin(a)));
+            array[i] = _rng.Next(200) + 1;
         }
-        
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -118,18 +114,32 @@ public partial class MainWindow : Window
         }
         return result;
     }
+    double Wild(double value)
+    {
+        var exp = 1;
+        var result = 0.0;
+        for (int i = 0; i < 50; i++)
+        {
+            exp *= 10;
+            result += ((exp * value) - Truncate(exp * value)) / exp;
+        }
+        return result;
+    }
     private void Tick(object? sender, EventArgs e)
     {
-        foreach (var item in _attractor)
+        for (int i = 0; i < 200; i++)
         {
-            item.Next(_space);
+            if (array[i] < array[_sorted] ^ i < _sorted)
+            {
+                (array[i], array[_sorted]) = (array[_sorted], array[i]);
+            }
         }
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = 255 - _space[x, y];
+                var c = (array[x / 4] * 4 >= 800 - y) ? 0 : 255;
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
@@ -222,6 +232,24 @@ public partial class MainWindow : Window
         return Interpolation(result, Color.FromRgb(v, v, v), s);
     }
 }
+class OscillateDot
+{
+    public OscillateDot(double x, double y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public double X { get; set; }
+    public double Y { get; set; }
+    public void Next(int[,] proj)
+    {
+        proj[(int)(X + 400), (int)(Abs(Y + 400))] = 127;
+        X += (Y + Sqrt(X * X + Y * Y) * 0.99) * 0.01;
+        Y -= X * 0.01;
+        proj[(int)(Abs(X + 400)), (int)(Abs(Y + 400))] = 255;
+    }
+}
 class LorenzDot
 {
     public LorenzDot(double x, double y, double z, double dt = 0.001)
@@ -239,10 +267,10 @@ class LorenzDot
 
     public void Next(int[,] proj)
     {
-        proj[(int)(Y + 400), (int)(Abs(Z + 400))] = 0;
+        //proj[(int)(X + 400), (int)(Abs(Y + 400))] = 0;
         X += 100 * (Y - X) * Dt;
         Y += (X * (28 - Z) - Y) * Dt;
         Z += (X * Y + Z * 8 / 3) * Dt;
-        proj[(int)(Abs(Y + 400)), (int)(Abs(Z + 400))] = 255;
+        proj[(int)(Abs(X + 400)), (int)(Abs(Y + 400))] = 255;
     }
 }
