@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     Roller R1 = new Roller(PI / 3);
     Roller R2 = new Roller(-PI / 3);
     private int _f = 0;
-    private int[] array = new int[200];
+    private int[] array = new int[6400];
     Dictionary<Direct, int> DirectX = new Dictionary<Direct, int>
     {
         {Direct.L, -1},
@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     };
     int[] Roll = new int[] { 1, 0, 1 };
     public int _sorted;
+    public int _step = 6399;
     enum Direct
     {
         L,
@@ -61,9 +62,9 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        for (int i = 0; i < 200; i++)
+        for (int i = 0; i < 6400; i++)
         {
-            array[i] = _rng.Next(200) + 1;
+            array[i] = _rng.Next(6400) + 1;
         }
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
@@ -127,19 +128,32 @@ public partial class MainWindow : Window
     }
     private void Tick(object? sender, EventArgs e)
     {
-        for (int i = 0; i < 200; i++)
+        for (long j = 0; j < 100000000; j++)
         {
-            if (array[i] < array[_sorted] ^ i < _sorted)
+            var k = j * _rng.Next();
+        }
+        for (int i = 0; i < 6400; i++)
+        {
+            if (_sorted == 6400 - _step)
             {
-                (array[i], array[_sorted]) = (array[_sorted], array[i]);
+                _sorted = 0;
             }
+            if (array[_sorted] > array[_sorted + _step])
+            {
+                (array[_sorted], array[_sorted + _step]) = (array[_sorted + _step], array[_sorted]);
+            }
+            _sorted++;
+        }
+        if (_step > 1)
+        {
+            _step = (int)(_step / 1.247);
         }
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = (array[x / 4] * 4 >= 800 - y) ? 0 : 255;
+                var c = (array[x * 8] / 8 >= 800 - y) ? 0 : 255;
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
