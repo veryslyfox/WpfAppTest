@@ -25,7 +25,7 @@
 //     private readonly Random _rng = new();
 //     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
 //     public int _f;
-//     private int[,] _field = new int[400, 400];
+//     private int[,] _field = new int[800, 800];
 //     private int _count;
 //     private string _survival;
 //     private string _birth;
@@ -95,7 +95,8 @@
 //                 //_field[x, y] = _rng.Next(_values);
 //             }
 //         }
-//         _rules = Rules.Ulam;
+//         _rules = Rules.Triangle;
+//         _field[799, 0] = 1;
 //         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
 //         image.Source = _bitmap;
 //         _timer.Interval = TimeSpan.FromSeconds(0.01);
@@ -110,7 +111,7 @@
 //         {
 //             for (int x = 0; x < _bitmap.PixelWidth; x++)
 //             {
-//                 var color = _field[x / 2, y / 2] == 0 ? FromRgb(0, 0, 0) : Colors[_field[x / 2, y / 2] - 1];
+//                 var color = _field[x, y] == 0 ? FromRgb(0, 0, 0) : FromRgb(255, 255, 255);
 //                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
 //                 unsafe
 //                 {
@@ -269,7 +270,7 @@
 //                 }
 //                 break;
 //             case Key.N:
-//                 Evolution3(null, new EventArgs());
+//                 Evolution(null, new EventArgs());
 //                 break;
 //             case Key.R:
 //                 OnRandom(_prob, _cell);
@@ -277,12 +278,12 @@
 //             case Key.S:
 //                 if (_stop)
 //                 {
-//                     _timer.Tick += Evolution3;
+//                     _timer.Tick += Evolution;
 //                     _stop = false;
 //                 }
 //                 else
 //                 {
-//                     _timer.Tick -= Evolution3;
+//                     _timer.Tick -= Evolution;
 //                     _stop = true;
 //                 }
 //                 break;
@@ -315,15 +316,11 @@
 //         var count = 0;
 //         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
 //         {
-//             count++;
-//         }
-//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
-//         {
-//             count++;
+//             count += _field[column + 1, row - 1];
 //         }
 //         if (row != 0 && _field[column, row - 1] != 0)
 //         {
-//             count++;
+//             count += _field[column, row - 1];
 //         }
 //         return count;
 //     }
@@ -1102,10 +1099,13 @@
 //                         }
 //                         break;
 //                     case Rules.Triangle:
-
-//                         if (row != 0 && column != 0 && column != _field.GetLength(1) - 1)
+//                         if (_field[column, row] == 0)
 //                         {
-//                             _field[column, row] = (_field[column + 1, row - 1] + _field[column + 1, row - 1]) & 3;
+//                             newField[column, row] = GetNeighborCount3(column, row) & 5;
+//                         }
+//                         else
+//                         {
+//                             newField[column, row] = _field[column, row];
 //                         }
 //                         break;
 //                     case Rules.SeedsWithoutDead:
@@ -1288,15 +1288,15 @@
 //                     case Rules.Social:
 //                         if (_field[column, row] == 0)
 //                         {
-//                             _field[column, row] = _rng.NextDouble() < 0.5 ? 0 : 1;
+//                             _field[column, row] = _rng.NextDouble() < 1 ? 0 : 1;
 //                         }
 //                         if (_field[column, row] == 1)
 //                         {
-//                             _field[column, row] = _rng.NextDouble() < 0.5 ? 1 : 0;
+//                             _field[column, row] = _rng.NextDouble() < 1 ? 1 : 0;
 //                         }
 //                         if (_field[column, row] != 0)
 //                         {
-//                             if (GetNeighborCount(column, row) is > 1 and not 8)
+//                             if (GetNeighborCount(column, row, 1) is > 1 and not 8)
 //                             {
 //                                 newField[column, row] = _field[column, row] + 1;
 //                             }

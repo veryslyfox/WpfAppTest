@@ -60,8 +60,4 @@ sealed class Particle2
         X += VelocityX;
         Y += VelocityY;
     }
-    public static Particle2 operator *(Particle2 left, Matrix right)
-    {
-        return new(left.X, left.Y, left.VelocityX * right.M11 + left.VelocityY * right.M12, left.VelocityX * right.M21 + left.VelocityY * right.M22);
-    }
 }

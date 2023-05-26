@@ -1,0 +1,2 @@
+
+$${\displaystyle \lambda =\lim _{N\rightarrow \infty }{\frac {1}{N}}\sum _{n=1}^{N}\log \left|{dx_{n+1} \over dx_{n}}\right|=\lim _{N\rightarrow \infty }{\frac {1}{N}}\sum _{n=1}^{N}\log |r_{n}(1-2x_{n})|}
