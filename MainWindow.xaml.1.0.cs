@@ -1,3 +1,4 @@
+using System.IO;
 using System;
 using System.Diagnostics;
 using System.Windows;
@@ -18,6 +19,7 @@ using Objects.VolumeObjects;
 using System.Threading;
 using Vector = System.Windows.Vector;
 using System.Windows.Controls;
+using System.Collections;
 
 namespace WpfApp1;
 
@@ -28,14 +30,13 @@ public partial class MainWindow : Window
     private readonly WriteableBitmap _bitmap;
     private readonly Random _rng = new();
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-    private int[,] _space = new int[800, 800];
+    private bool[,] _space = new bool[40, 40];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
     private Point[] _points = new Point[] { new Point(400, 400) };
     private int _size = 100;
     Roller R1 = new Roller(PI / 3);
     Roller R2 = new Roller(-PI / 3);
     private int _f = 0;
-    private int[] array = new int[6400];
     Dictionary<Direct, int> DirectX = new Dictionary<Direct, int>
     {
         {Direct.L, -1},
@@ -53,6 +54,10 @@ public partial class MainWindow : Window
     int[] Roll = new int[] { 1, 0, 1 };
     public int _sorted;
     public int _step = 6399;
+    private bool _clicked;
+    private ConvolutionNeuralNetwork _network;
+    private List<Matrix> _pluses = new List<Matrix> { };
+    private List<Matrix> _minuses = new List<Matrix> { };
     enum Direct
     {
         L,
@@ -62,10 +67,7 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        for (int i = 0; i < 6400; i++)
-        {
-            array[i] = _rng.Next(6400) + 1;
-        }
+        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "1600,5,2", 0.001, 10);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -73,15 +75,42 @@ public partial class MainWindow : Window
         _timer.Tick += Tick;
         _timer.Start();
         MouseLeftButtonDown += ClickHandler;
-        MouseLeftButtonUp += UpClickHandler;
+        MouseLeftButtonUp += UpHandler;
         KeyDown += KeyHandler;
     }
 
-    private void UpClickHandler(object sender, MouseButtonEventArgs e)
-    {
-    }
     private void KeyHandler(object sender, KeyEventArgs args)
     {
+        var key = args.Key;
+        switch (key)
+        {
+            case Key.P:
+                {
+                    Matrix matrix = Matrix.Generate(40, 40);
+                    for (int y = 0; y < 40; y++)
+                    {
+                        for (int x = 0; x < 40; x++)
+                        {
+                            matrix[x, y] = _space[x, y] ? 0 : 1;
+                        }
+                    }
+                    _pluses.Add(matrix);
+                    break;
+                }
+            case Key.M:
+                {
+                    Matrix matrix = Matrix.Generate(40, 40);
+                    for (int y = 0; y < 40; y++)
+                    {
+                        for (int x = 0; x < 40; x++)
+                        {
+                            matrix[x, y] = _space[x, y] ? 0 : 1;
+                        }
+                    }
+                    _minuses.Add(matrix);
+                    break;
+                }
+        }
     }
     double F(double val)
     {
@@ -94,66 +123,24 @@ public partial class MainWindow : Window
             return val * F(val - 1);
         }
     }
-    public bool[,] Convolution(bool[,] image, int radius, int min)
-    {
 
-        var result = image;
-        for (int row = radius; row < image.GetLength(1) - radius; row++)
-        {
-            for (int column = radius; column < image.GetLength(0) - radius; column++)
-            {
-                var sum = 0;
-                for (int xMove = -radius; xMove <= radius; xMove++)
-                {
-                    for (int yMove = -radius; yMove <= radius; yMove++)
-                    {
-                        sum += image[column + xMove, row + yMove] ? 1 : 0;
-                    }
-                }
-                result[column, row] = sum >= min;
-            }
-        }
-        return result;
-    }
-    double Wild(double value)
-    {
-        var exp = 1;
-        var result = 0.0;
-        for (int i = 0; i < 50; i++)
-        {
-            exp *= 10;
-            result += ((exp * value) - Truncate(exp * value)) / exp;
-        }
-        return result;
-    }
     private void Tick(object? sender, EventArgs e)
     {
-        for (long j = 0; j < 100000000; j++)
+        if (_clicked)
         {
-            var k = j * _rng.Next();
-        }
-        for (int i = 0; i < 6400; i++)
-        {
-            if (_sorted == 6400 - _step)
+            var x = (int)Mouse.GetPosition(this).X;
+            var y = (int)Mouse.GetPosition(this).Y;
+            if (x is < 40 and > 0 && y is < 40 and > 0)
             {
-                _sorted = 0;
+                _space[x, y] = true;
             }
-            if (array[_sorted] > array[_sorted + _step])
-            {
-                (array[_sorted], array[_sorted + _step]) = (array[_sorted + _step], array[_sorted]);
-            }
-            _sorted++;
-        }
-        if (_step > 1)
-        {
-            _step = (int)(_step / 1.247);
         }
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = (array[x * 8] / 8 >= 800 - y) ? 0 : 255;
+                var c = _space[x / 20, y / 20] ? 255 : 0;
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
@@ -162,12 +149,18 @@ public partial class MainWindow : Window
                 }
             }
         }
+        _step++;
+        _f++;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
-        _f += 1;
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
+        _clicked = true;
+    }
+    private void UpHandler(object sender, MouseEventArgs args)
+    {
+        _clicked = false;
     }
     private Color FromRgbSaturated(int r, int g, int b)
     {
@@ -244,6 +237,406 @@ public partial class MainWindow : Window
         DoubleInterval(240, 300, b, a, d);
         DoubleInterval(300, 360, d, a, c);
         return Interpolation(result, Color.FromRgb(v, v, v), s);
+    }
+}
+public class Matrix
+{
+    public Matrix(Vector[] vectors)
+    {
+        Vectors = vectors;
+        X = vectors[0].Values.Length;
+        Y = vectors.Length;
+    }
+    public double[] ToArray()
+    {
+        return Vectors.SelectMany(v => v.Values).ToArray();
+    }
+    public static Matrix Create(params Vector[] vectors)
+    {
+        return new(vectors);
+    }
+    public static Vector operator *(Vector vector, Matrix matrix)
+    {
+        return new(matrix.Vectors.Select(v => v * vector).ToArray());
+    }
+    public static Matrix operator +(Matrix a, Matrix b)
+    {
+        return new(a.Vectors.Zip(b.Vectors, (p, q) => p + q).ToArray());
+    }
+    public static Matrix operator *(Matrix a, double b)
+    {
+        return new(a.Vectors.Select(k => k * b).ToArray());
+    }
+    public static Matrix operator -(Matrix value)
+    {
+        return new(value.Vectors.Select(z => -z).ToArray());
+    }
+    public Vector[] Vectors { get; }
+    public void Write()
+    {
+        foreach (var item in Vectors)
+        {
+            item.Write();
+        }
+    }
+    public static Matrix Generate(int x, int y, double d = 0)
+    {
+        var array = new double[x];
+        Array.Fill(array, d);
+        var vector = new Vector(array);
+        var vectors = new Vector[y];
+        for (int i = 0; i < y; i++)
+        {
+            array = array.ToArray();
+            vector = new(array);
+            vectors[i] = vector;
+        }
+        return new(vectors);
+    }
+    public static Random Random = new Random();
+    public double this[int x, int y]
+    {
+        get => Vectors[y].Values[x];
+        set => Vectors[y].Values[x] = value;
+    }
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+public class Vector
+{
+    public Vector(double[] values)
+    {
+        Values = values;
+    }
+    public static Vector Create(params double[] values)
+    {
+        return new(values);
+    }
+    public double[] Values { get; set; }
+    public static double operator *(Vector a, Vector b)
+    {
+        return a.Values.Zip(b.Values, (p, q) => p * q).Sum();
+    }
+    public static Vector operator +(Vector a, Vector b)
+    {
+        return new(a.Values.Zip(b.Values, (p, q) => p + q).ToArray());
+    }
+    public static Vector operator *(Vector a, double b)
+    {
+        return new(a.Values.Select(k => k * b).ToArray());
+    }
+    public static Vector operator -(Vector value)
+    {
+        return new(value.Values.Select(z => -z).ToArray());
+    }
+    public void Write()
+    {
+        foreach (var item in Values)
+        {
+            Console.Write(item + " ");
+        }
+        Console.WriteLine();
+    }
+    public Vector Relu()
+    {
+        return new(Values.Select(x => x > 0 ? x : 0).ToArray());
+    }
+    public double Sum()
+    {
+        return Values.Sum();
+    }
+}
+public class NeuralNetwork
+{
+    public NeuralNetwork(Matrix[] matrices, double delta = 0.01, double alpha = 1)
+    {
+        Matrices = matrices;
+        Delta = delta;
+        Alpha = alpha;
+    }
+
+    public Matrix[] Matrices { get; set; }
+    public double Delta { get; set; }
+    public double Alpha { get; private set; }
+    public static readonly Random _rng = new Random();
+    public Vector Propagate(Vector data)
+    {
+        Vector result = data;
+        foreach (var item in Matrices)
+        {
+            data = (data * item).Relu();
+        }
+        return data;
+    }
+
+
+    public static NeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
+    {
+        var neurons = arch.Split(',').Select(k => int.Parse(k)).ToArray();
+        Matrix[] result = new Matrix[neurons.Length - 1];
+        for (int i = 0; i < neurons.Length - 1; i++)
+        {
+            result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
+        }
+        return new(result, delta, alpha);
+    }
+    public void Write()
+    {
+        foreach (var item in Matrices)
+        {
+            item.Write();
+        }
+    }
+
+    public Matrix this[int layer]
+    {
+        get => Matrices[layer];
+        set => Matrices[layer] = value;
+    }
+    public double this[int x, int y, int layer]
+    {
+        get => Matrices[layer][x, y];
+        set => Matrices[layer][x, y] = value;
+    }
+    public void CorrectAll(Func<NeuralNetwork, double> func)
+    {
+        for (int layer = 0; layer < Matrices.Length; layer++)
+        {
+            for (int y = 0; y < Matrices[layer].Y; y++)
+            {
+                for (int x = 0; x < Matrices[layer].X; x++)
+                {
+                    Correct(x, y, layer, func);
+                }
+            }
+        }
+    }
+    public void Correct(int x, int y, int layer, Func<NeuralNetwork, double> func)
+    {
+        var fx = func(this);
+        this[x, y, layer] += Delta;
+        var fxd = func(this);
+        this[x, y, layer] -= Delta;
+        this[x, y, layer] += (fx - fxd) * Alpha;
+        var fxr = func(this);
+        if (fxr > fx)
+        {
+            Alpha /= 2;
+        }
+    }
+    public void Write(string fileName, FileMode mode)
+    {
+        var file = File.Open(fileName, mode);
+        BinaryWriter writer = new BinaryWriter(file);
+        writer.Write(Delta);
+        writer.Write(Alpha);
+        writer.Write(Matrices.Length);
+        writer.Write(Matrices[0].X);
+        for (int layer = 0; layer < Matrices.Length; layer++)
+        {
+            writer.Write(Matrices[layer].Y);
+            for (int y = 0; y < Matrices[layer].Y; y++)
+            {
+                for (int x = 0; x < Matrices[layer].X; x++)
+                {
+                    writer.Write(this[x, y, layer]);
+                }
+            }
+        }
+        file.Close();
+    }
+    static public NeuralNetwork Read(string fileName, FileMode mode)
+    {
+        var file = File.Open(fileName, mode);
+        BinaryReader reader = new BinaryReader(file);
+        var delta = reader.ReadDouble();
+        var alpha = reader.ReadDouble();
+        var layerCount = reader.ReadInt32();
+        var width = reader.ReadInt32();
+        int height;
+        var result = new NeuralNetwork(new Matrix[layerCount], delta, alpha);
+        for (int layer = 0; layer < layerCount; layer++)
+        {
+            height = reader.ReadInt32();
+            result.Matrices[layer] = Matrix.Generate(width, height);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    result[x, y, layer] = reader.ReadDouble();
+                }
+            }
+            width = height;
+        }
+        file.Close();
+        return result;
+    }
+}
+static class Activate
+{
+    public static readonly Func<double, double> Relu = x => x < 0 ? 0 : x;
+    public static readonly Func<double, double> Sygmoide = x => 1 / (1 + Exp(-x));
+
+}
+class ConvolutionNeuralNetwork
+{
+    public ConvolutionNeuralNetwork(Matrix[] matrices, double delta = 0.01, double alpha = 1)
+    {
+        Matrices = matrices;
+        Delta = delta;
+        Alpha = alpha;
+    }
+
+    public Matrix[] Matrices { get; set; }
+    public double Delta { get; set; }
+    public double Alpha { get; private set; }
+    public static readonly Random _rng = new Random();
+    public Matrix Propagate(Matrix image)
+    {
+        var result = Matrix.Generate(image.X, image.Y, 0);
+        for (int i = 0; i < Matrices.Length; i++)
+        {
+            result = Convolution(result, Matrices[i], Activate.Relu);
+        }
+        return result;
+    }
+
+    public static Matrix Convolution(Matrix image, Matrix core, Func<double, double> func)
+    {
+        var result = Matrix.Generate(image.X - core.X + 1, image.Y - core.Y + 1);
+        for (int y = 0; y < result.Y; y++)
+        {
+            for (int x = 0; x < result.X; x++)
+            {
+                var sum = 0.0;
+                for (int row = 0; row < core.Y; row++)
+                {
+                    for (int column = 0; column < core.X; column++)
+                    {
+                        sum += func(core[column, row] * image[x + column, y + row]);
+                    }
+                }
+                result[x, y] = sum;
+            }
+        }
+        return result;
+    }
+    public static ConvolutionNeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
+    {
+        var neurons = arch.Split(',', '*').Select(k => int.Parse(k)).ToArray();
+        Matrix[] result = new Matrix[neurons.Length - 1];
+        for (int i = 0; i < neurons.Length / 2; i++)
+        {
+            result[i] = Evolution.GetRandomMatrix(neurons[2 * i], neurons[2 * i + 1], min, max);
+        }
+        return new(result, delta, alpha);
+    }
+    public void Write()
+    {
+        foreach (var item in Matrices)
+        {
+            item.Write();
+        }
+    }
+
+    public Matrix this[int layer]
+    {
+        get => Matrices[layer];
+        set => Matrices[layer] = value;
+    }
+    public double this[int x, int y, int layer]
+    {
+        get => Matrices[layer][x, y];
+        set => Matrices[layer][x, y] = value;
+    }
+    public void CorrectAll(Func<ConvolutionNeuralNetwork, double> func)
+    {
+        for (int layer = 0; layer < Matrices.Length; layer++)
+        {
+            for (int y = 0; y < Matrices[layer].Y; y++)
+            {
+                for (int x = 0; x < Matrices[layer].X; x++)
+                {
+                    Correct(x, y, layer, func);
+                }
+            }
+        }
+    }
+    public void Correct(int x, int y, int layer, Func<ConvolutionNeuralNetwork, double> func)
+    {
+        var fx = func(this);
+        this[x, y, layer] += Delta;
+        var fxd = func(this);
+        this[x, y, layer] -= Delta;
+        this[x, y, layer] += (fx - fxd) * Alpha;
+        var fxr = func(this);
+        if (fxr > fx)
+        {
+            Alpha /= 2;
+        }
+    }
+    public void Write(string fileName, FileMode mode)
+    {
+        var file = File.Open(fileName, mode);
+        BinaryWriter writer = new BinaryWriter(file);
+        writer.Write(Delta);
+        writer.Write(Alpha);
+        writer.Write(Matrices.Length);
+        writer.Write(Matrices[0].X);
+        for (int layer = 0; layer < Matrices.Length; layer++)
+        {
+            writer.Write(Matrices[layer].Y);
+            for (int y = 0; y < Matrices[layer].Y; y++)
+            {
+                for (int x = 0; x < Matrices[layer].X; x++)
+                {
+                    writer.Write(this[x, y, layer]);
+                }
+            }
+        }
+        file.Close();
+    }
+    static public ConvolutionNeuralNetwork Read(string fileName, FileMode mode)
+    {
+        var file = File.Open(fileName, mode);
+        BinaryReader reader = new BinaryReader(file);
+        var delta = reader.ReadDouble();
+        var alpha = reader.ReadDouble();
+        var layerCount = reader.ReadInt32();
+        var width = reader.ReadInt32();
+        int height;
+        var result = new ConvolutionNeuralNetwork(new Matrix[layerCount], delta, alpha);
+        for (int layer = 0; layer < layerCount; layer++)
+        {
+            height = reader.ReadInt32();
+            result.Matrices[layer] = Matrix.Generate(width, height);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    result[x, y, layer] = reader.ReadDouble();
+                }
+            }
+            width = height;
+        }
+        file.Close();
+        return result;
+    }
+}
+public class Evolution
+{
+    static Random Random { get; } = new Random();
+    public static Matrix GetRandomMatrix(int x, int y, double min, double max)
+    {
+        var matrix = Matrix.Generate(x, y);
+        for (int row = 0; row < y; row++)
+        {
+            for (int column = 0; column < x; column++)
+            {
+                matrix[column, row] = Random.NextDouble() * (max - min) + min;
+            }
+        }
+        return matrix;
     }
 }
 class OscillateDot
