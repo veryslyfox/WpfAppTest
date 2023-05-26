@@ -67,7 +67,7 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "1600,5,2", 0.001, 10);
+        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6", 0.001, 10);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -110,7 +110,36 @@ public partial class MainWindow : Window
                     _minuses.Add(matrix);
                     break;
                 }
+            case Key.C:
+                {
+                    _space = new bool[40, 40];
+                    break;
+                }
+            case Key.S:
+                {
+                    for (int i = 0; i < 100000; i++)
+                    {
+                        _network.CorrectAll(Error);
+                    }
+                    _network.Write("Weights", FileMode.OpenOrCreate);
+                }
+                break;
         }
+    }
+    double Error(ConvolutionNeuralNetwork network)
+    {
+        var sum = 0.0;
+        foreach (var item in _pluses)
+        {
+            var value = network.Propagate(item)[0, 0];
+            sum += Abs(Round(value * 2) / 2);
+        }
+        foreach (var item in _minuses)
+        {
+            var value = network.Propagate(item)[0, 0];
+            sum += Abs(Round(value * 2) / 2 - 1);
+        }
+        return sum;
     }
     double F(double val)
     {
@@ -128,8 +157,8 @@ public partial class MainWindow : Window
     {
         if (_clicked)
         {
-            var x = (int)Mouse.GetPosition(this).X;
-            var y = (int)Mouse.GetPosition(this).Y;
+            var x = (int)(Mouse.GetPosition(this).X / 20);
+            var y = (int)(Mouse.GetPosition(this).Y / 20);
             if (x is < 40 and > 0 && y is < 40 and > 0)
             {
                 _space[x, y] = true;
@@ -475,7 +504,7 @@ public class NeuralNetwork
 static class Activate
 {
     public static readonly Func<double, double> Relu = x => x < 0 ? 0 : x;
-    public static readonly Func<double, double> Sygmoide = x => 1 / (1 + Exp(-x));
+    public static readonly Func<double, double> Sigmoide = x => 1 / (1 + Exp(-x));
 
 }
 class ConvolutionNeuralNetwork
