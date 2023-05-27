@@ -67,7 +67,7 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6", 0.001, 10);
+        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6", 1, 10);
         InitializeComponent();
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
@@ -95,6 +95,7 @@ public partial class MainWindow : Window
                         }
                     }
                     _pluses.Add(matrix);
+                    _space = new bool[40, 40];
                     break;
                 }
             case Key.M:
@@ -108,6 +109,7 @@ public partial class MainWindow : Window
                         }
                     }
                     _minuses.Add(matrix);
+                    _space = new bool[40, 40];
                     break;
                 }
             case Key.C:
@@ -117,10 +119,7 @@ public partial class MainWindow : Window
                 }
             case Key.S:
                 {
-                    for (int i = 0; i < 100000; i++)
-                    {
-                        _network.CorrectAll(Error);
-                    }
+                    _network.CorrectAll(Error);
                     _network.Write("Weights", FileMode.OpenOrCreate);
                 }
                 break;
@@ -169,7 +168,7 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = _space[x / 20, y / 20] ? 255 : 0;
+                var c = _space[x, y] ? 255 : 0;
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
@@ -182,6 +181,15 @@ public partial class MainWindow : Window
         _f++;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
+    }
+    Complex Iterate(Complex value, Complex c, int p)
+    {
+        if (p == 0)
+        {
+            return value;
+        }
+        var previous = Iterate(value, c, p - 1);
+        return previous * previous + c;
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
@@ -553,7 +561,7 @@ class ConvolutionNeuralNetwork
     public static ConvolutionNeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
     {
         var neurons = arch.Split(',', '*').Select(k => int.Parse(k)).ToArray();
-        Matrix[] result = new Matrix[neurons.Length - 1];
+        Matrix[] result = new Matrix[neurons.Length / 2];
         for (int i = 0; i < neurons.Length / 2; i++)
         {
             result[i] = Evolution.GetRandomMatrix(neurons[2 * i], neurons[2 * i + 1], min, max);
