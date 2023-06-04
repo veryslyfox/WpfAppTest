@@ -20,6 +20,7 @@ using System.Threading;
 using Vector = System.Windows.Vector;
 using System.Windows.Controls;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace WpfApp1;
 
@@ -127,12 +128,13 @@ public partial class MainWindow : Window
                 }
             case Key.S:
                 {
+                    _time = Stopwatch.GetTimestamp();
                     for (int i = 0; i < 10; i++)
                     {
                         _network.CorrectAll(Error);
                     }
                     _network.Write("Weights", FileMode.OpenOrCreate);
-                    MessageBox.Show(((Stopwatch.GetTimestamp() - _time) / Stopwatch.Frequency).ToString());
+                    MessageBox.Show(((double)(Stopwatch.GetTimestamp() - _time) / Stopwatch.Frequency).ToString());
                 }
                 break;
         }
@@ -228,7 +230,7 @@ public partial class MainWindow : Window
         //         return;
         // }
         // _clicksCount++;
-        // _clicked = true;
+        _clicked = true;
     }
     private void UpHandler(object sender, MouseEventArgs args)
     {
@@ -318,20 +320,29 @@ public class Matrix
     {
         X = vectors[0].Values.Length;
         Y = vectors.Length;
-        Weights = new FastArray(new double[X * Y]);
-        for (int y = 0; y < vectors.Length; y++)
+        Weights = new double[X * Y];
+        unsafe
         {
-            for (int x = 0; x < vectors[y].Values.Length; x++)
+            GCHandle.Alloc(Weights, GCHandleType.Pinned);
+            fixed (double* pointer = Weights)
             {
-                Weights[y * X + x] = vectors[y].Values[x];
+                for (int y = 0; y < vectors.Length; y++)
+                {
+                    var rowBegin = y * X;
+                    for (int x = 0; x < vectors[y].Values.Length; x++)
+                    {
+                        *(pointer + rowBegin + x) = vectors[y].Values[x];
+                    }
+                }
+                Pointer = (IntPtr)pointer;
             }
         }
-
     }
     public static Matrix Create(params Vector[] vectors)
     {
         return new(vectors);
     }
+    public IntPtr Pointer;
     public static Vector operator *(Vector vector, Matrix matrix)
     {
         var result = new Vector(new double[vector.Length]);
@@ -358,7 +369,7 @@ public class Matrix
     // {
     //     return new(value.Weights.Select(z => -z).ToArray());
     // }
-    public FastArray Weights { get; }
+    public double[] Weights { get; }
     public static Matrix Generate(int x, int y, double d = 0)
     {
         var array = new double[x];
@@ -578,30 +589,39 @@ class ConvolutionNeuralNetwork
         var result = Matrix.Generate(image.X, image.Y, 0);
         for (int i = 0; i < Matrices.Length; i++)
         {
-            result = Convolution(result, Matrices[i], Activate.Relu);
+            result = Convolution(result, Matrices[i]);
         }
         return result;
     }
 
-    public static Matrix Convolution(Matrix image, Matrix kernel, Func<double, double> func)
+    public static Matrix Convolution(Matrix image, Matrix kernel)
     {
-        var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
-        for (int y = 0; y < result.Y; y++)
+        unsafe
         {
-            for (int x = 0; x < result.X; x++)
+            fixed (double* pointer = image.Weights)
             {
-                var sum = 0.0;
-                for (int row = 0; row < kernel.Y; row++)
+                var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
+                for (int y = 0; y < result.Y; y++)
                 {
-                    for (int column = 0; column < kernel.X; column++)
+                    for (int x = 0; x < result.X; x++)
                     {
-                        sum += func(kernel[column, row] * image[x + column, y + row]);
+                        var sum = 0.0;
+                        for (int row = 0; row < kernel.Y; row++)
+                        {
+                            var kernelRowBegin = row * kernel.X;
+                            var imageRowBegin = (row + y) * image.X;
+                            for (int column = 0; column < kernel.X; column++)
+                            {
+                                var v = *((double*)kernel.Pointer + kernelRowBegin + column) * *((double*)image.Pointer + imageRowBegin + column + x);
+                                sum += (v < 0 ? 0 : v);
+                            }
+                        }
+                        result[x, y] = sum;
                     }
                 }
-                result[x, y] = sum;
+                return result;
             }
         }
-        return result;
     }
     public static ConvolutionNeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
     {
