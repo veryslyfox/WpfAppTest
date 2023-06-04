@@ -58,6 +58,13 @@ public partial class MainWindow : Window
     private ConvolutionNeuralNetwork _network;
     private List<Matrix> _pluses = new List<Matrix> { };
     private List<Matrix> _minuses = new List<Matrix> { };
+    private double _radiansInGradusCount = 180 / Math.PI;
+    private long _time;
+    private Point _a;
+    private Point _b;
+    private Point _c;
+    private Point _d;
+    private int _clicksCount;
     enum Direct
     {
         L,
@@ -67,8 +74,9 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6", 1, 10);
+        _time = Stopwatch.GetTimestamp();
         InitializeComponent();
+        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 5*5", 0.01, 10);
         _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
         image.Source = _bitmap;
         _timer.Interval = TimeSpan.FromSeconds(0.000001);
@@ -119,8 +127,12 @@ public partial class MainWindow : Window
                 }
             case Key.S:
                 {
-                    _network.CorrectAll(Error);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        _network.CorrectAll(Error);
+                    }
                     _network.Write("Weights", FileMode.OpenOrCreate);
+                    MessageBox.Show(((Stopwatch.GetTimestamp() - _time) / Stopwatch.Frequency).ToString());
                 }
                 break;
         }
@@ -131,12 +143,12 @@ public partial class MainWindow : Window
         foreach (var item in _pluses)
         {
             var value = network.Propagate(item)[0, 0];
-            sum += Abs(Round(value * 2) / 2);
+            sum += Abs(Round(value * 2) / 2 - 1);
         }
         foreach (var item in _minuses)
         {
             var value = network.Propagate(item)[0, 0];
-            sum += Abs(Round(value * 2) / 2 - 1);
+            sum += Abs(Round(value * 2) / 2);
         }
         return sum;
     }
@@ -168,7 +180,7 @@ public partial class MainWindow : Window
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = _space[x, y] ? 255 : 0;
+                var c = _space[x / 20, y / 20] ? 255 : 0;
                 var color = FromRgb(c, c, c);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
@@ -193,7 +205,30 @@ public partial class MainWindow : Window
     }
     private void ClickHandler(object sender, MouseEventArgs args)
     {
-        _clicked = true;
+        // var clickPoint = args.GetPosition(this);
+        // switch (_clicksCount)
+        // {
+        //     case 0:
+        //         _a = clickPoint;
+        //         break;
+        //     case 1:
+        //         _b = clickPoint;
+        //         break;
+        //     case 2:
+        //         _c = clickPoint;
+        //         break;
+        //     case 3:
+        //         _d = clickPoint;
+        //         for (double t = 0; t < 1; t += 0.001)
+        //         {
+        //             var point = SpecialMath.BezierCurve(t, _a, _b, _c, _d);
+        //             _space[(int)point.X, (int)point.Y] = true;
+        //         }
+        //         _clicksCount = 0;
+        //         return;
+        // }
+        // _clicksCount++;
+        // _clicked = true;
     }
     private void UpHandler(object sender, MouseEventArgs args)
     {
@@ -255,6 +290,7 @@ public partial class MainWindow : Window
     {
         var result = new Color();
         var hue = h % 360;
+        hue = hue >= 0 ? hue : (hue + 360);
         var hv = (hue % 60) * 255 / 60;
         var a = 0;
         var b = hv;
@@ -280,13 +316,17 @@ public class Matrix
 {
     public Matrix(Vector[] vectors)
     {
-        Vectors = vectors;
         X = vectors[0].Values.Length;
         Y = vectors.Length;
-    }
-    public double[] ToArray()
-    {
-        return Vectors.SelectMany(v => v.Values).ToArray();
+        Weights = new double[X * Y];
+        for (int y = 0; y < vectors.Length; y++)
+        {
+            for (int x = 0; x < vectors[y].Values.Length; x++)
+            {
+                Weights[y * X + x] = vectors[y].Values[x];
+            }
+        }
+
     }
     public static Matrix Create(params Vector[] vectors)
     {
@@ -294,28 +334,31 @@ public class Matrix
     }
     public static Vector operator *(Vector vector, Matrix matrix)
     {
-        return new(matrix.Vectors.Select(v => v * vector).ToArray());
-    }
-    public static Matrix operator +(Matrix a, Matrix b)
-    {
-        return new(a.Vectors.Zip(b.Vectors, (p, q) => p + q).ToArray());
-    }
-    public static Matrix operator *(Matrix a, double b)
-    {
-        return new(a.Vectors.Select(k => k * b).ToArray());
-    }
-    public static Matrix operator -(Matrix value)
-    {
-        return new(value.Vectors.Select(z => -z).ToArray());
-    }
-    public Vector[] Vectors { get; }
-    public void Write()
-    {
-        foreach (var item in Vectors)
+        var result = new Vector(new double[vector.Length]);
+        for (int y = 0; y < matrix.Y; y++)
         {
-            item.Write();
+            var value = 0.0;
+            for (int x = 0; x < matrix.X; x++)
+            {
+                value += matrix[x, y] * result[x];
+            }
+            result[y] = value;
         }
+        return result;
     }
+    // public static Matrix operator +(Matrix a, Matrix b)
+    // {
+    //     return new(a.Weights.Zip(b.Weights, (p, q) => p + q).ToArray());
+    // }
+    // public static Matrix operator *(Matrix a, double b)
+    // {
+    //     return new(a.Weights.Select(k => k * b).ToArray());
+    // }
+    // public static Matrix operator -(Matrix value)
+    // {
+    //     return new(value.Weights.Select(z => -z).ToArray());
+    // }
+    public double[] Weights { get; }
     public static Matrix Generate(int x, int y, double d = 0)
     {
         var array = new double[x];
@@ -333,8 +376,8 @@ public class Matrix
     public static Random Random = new Random();
     public double this[int x, int y]
     {
-        get => Vectors[y].Values[x];
-        set => Vectors[y].Values[x] = value;
+        get => Weights[y * X + x];
+        set => Weights[y * X + x] = value;
     }
     public int X { get; set; }
     public int Y { get; set; }
@@ -382,6 +425,15 @@ public class Vector
     {
         return Values.Sum();
     }
+    public double this[int index]
+    {
+        get => Values[index];
+        set => Values[index] = value;
+    }
+    public int Length
+    {
+        get => Values.Length;
+    }
 }
 public class NeuralNetwork
 {
@@ -416,13 +468,6 @@ public class NeuralNetwork
             result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
         }
         return new(result, delta, alpha);
-    }
-    public void Write()
-    {
-        foreach (var item in Matrices)
-        {
-            item.Write();
-        }
     }
 
     public Matrix this[int layer]
@@ -538,19 +583,19 @@ class ConvolutionNeuralNetwork
         return result;
     }
 
-    public static Matrix Convolution(Matrix image, Matrix core, Func<double, double> func)
+    public static Matrix Convolution(Matrix image, Matrix kernel, Func<double, double> func)
     {
-        var result = Matrix.Generate(image.X - core.X + 1, image.Y - core.Y + 1);
+        var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
         for (int y = 0; y < result.Y; y++)
         {
             for (int x = 0; x < result.X; x++)
             {
                 var sum = 0.0;
-                for (int row = 0; row < core.Y; row++)
+                for (int row = 0; row < kernel.Y; row++)
                 {
-                    for (int column = 0; column < core.X; column++)
+                    for (int column = 0; column < kernel.X; column++)
                     {
-                        sum += func(core[column, row] * image[x + column, y + row]);
+                        sum += func(kernel[column, row] * image[x + column, y + row]);
                     }
                 }
                 result[x, y] = sum;
@@ -567,13 +612,6 @@ class ConvolutionNeuralNetwork
             result[i] = Evolution.GetRandomMatrix(neurons[2 * i], neurons[2 * i + 1], min, max);
         }
         return new(result, delta, alpha);
-    }
-    public void Write()
-    {
-        foreach (var item in Matrices)
-        {
-            item.Write();
-        }
     }
 
     public Matrix this[int layer]

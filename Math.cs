@@ -102,13 +102,13 @@ static class SpecialMath
         var a = k / n * 2 * Math.PI;
         return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
     }
-    public static int DotFromMandelbrotSet(double x, double y)
+    public static int DotFromMandelbrotSet(double x, double y, double k)
     {
         var c = new Complex(0, 0);
         var a = new Complex(x, y);
         for (int i = 0; i < 30; i++)
         {
-            c = c * c + a;
+            c = Pow(c - k, -k) + a;
             if (c.Magnitude > 2)
             {
                 return 30 - i;
@@ -237,6 +237,37 @@ static class SpecialMath
             }
             return acc;
         };
+    }
+    public static Complex PolyLog(Complex value, int order)
+    {
+        var sum = Complex.Zero;
+        for (var i = 0.0; i < 100; i += 0.1)
+        {
+            sum += Pow(i, order) / (Exp(i - value) + 1);
+        }
+        return sum;
+    }
+    public static bool IsFractal(Complex complex, int precision)
+    {
+        return (Fractal(complex, precision).Phase - Fractal(complex - 0.01, precision).Phase) > 1;
+    }
+    public static Point BezierCurve(double t, Point a, Point b, Point c, Point d)
+    {
+        var ti = 1 - t;
+        var c1 = t * t * t;
+        var c2 = 3 * t * t * ti;
+        var c3 = 3 * t * ti * ti;
+        var c4 = ti * ti * ti;
+        return new(c1 * a.X + c2 * b.X + c3 * c.X + c4 * d.X, c1 * a.Y + c2 * b.Y + c3 * c.Y + c4 * d.Y);
+    }
+    public static Complex Fractal(Complex complex, int precision)
+    {
+        var result = complex;
+        for (int i = 0; i < precision; i++)
+        {
+            result = result - (result * result * result - 1) / (result * result);
+        }
+        return result;
     }
 }
 class LSystem

@@ -10,5 +10,5 @@ bin/
 packages/
 **/Properties/launchSettings.json
 **/Properties/*.p12
-
+Weights/
 # Local
