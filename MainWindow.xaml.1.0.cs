@@ -318,7 +318,7 @@ public class Matrix
     {
         X = vectors[0].Values.Length;
         Y = vectors.Length;
-        Weights = new double[X * Y];
+        Weights = new FastArray(new double[X * Y]);
         for (int y = 0; y < vectors.Length; y++)
         {
             for (int x = 0; x < vectors[y].Values.Length; x++)
@@ -358,7 +358,7 @@ public class Matrix
     // {
     //     return new(value.Weights.Select(z => -z).ToArray());
     // }
-    public double[] Weights { get; }
+    public FastArray Weights { get; }
     public static Matrix Generate(int x, int y, double d = 0)
     {
         var array = new double[x];
