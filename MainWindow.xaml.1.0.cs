@@ -316,25 +316,21 @@ public partial class MainWindow : Window
 }
 public class Matrix
 {
-    public Matrix(Vector[] vectors)
+    private GCHandle _gcHandle;
+    public unsafe Matrix(Vector[] vectors)
     {
         X = vectors[0].Values.Length;
         Y = vectors.Length;
         Weights = new double[X * Y];
-        unsafe
+        _gcHandle = GCHandle.Alloc(Weights, GCHandleType.Pinned);
+        Pointer = _gcHandle.AddrOfPinnedObject();
+        var pointer = (double*)Pointer;
+        for (int y = 0; y < vectors.Length; y++)
         {
-            GCHandle.Alloc(Weights, GCHandleType.Pinned);
-            fixed (double* pointer = Weights)
+            var rowBegin = y * X;
+            for (int x = 0; x < vectors[y].Values.Length; x++)
             {
-                for (int y = 0; y < vectors.Length; y++)
-                {
-                    var rowBegin = y * X;
-                    for (int x = 0; x < vectors[y].Values.Length; x++)
-                    {
-                        *(pointer + rowBegin + x) = vectors[y].Values[x];
-                    }
-                }
-                Pointer = (IntPtr)pointer;
+                *(pointer + rowBegin + x) = vectors[y].Values[x];
             }
         }
     }
