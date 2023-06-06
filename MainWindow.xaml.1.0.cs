@@ -177,13 +177,16 @@ public partial class MainWindow : Window
                 _space[x, y] = true;
             }
         }
+        var exp = Exp(ImaginaryOne * _f * 0.1);
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = _space[x / 20, y / 20] ? 255 : 0;
-                var color = FromRgb(c, c, c);
+                var c = new Complex(y / 100.0 - 4, x / 100.0 - 4);
+                var h = (int)(((c * c * c + 5 * c * c - 12 * c + 3) / (c * c + 1)).Magnitude * _radiansInGradusCount);
+                var v = (byte)(255 - c.Magnitude * 30);
+                var color = HsvToRgb(h, 255, 255);
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -594,29 +597,30 @@ class ConvolutionNeuralNetwork
     {
         unsafe
         {
-            fixed (double* pointer = image.Weights)
+            var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
+            for (int y = 0; y < result.Y; y++)
             {
-                var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
-                for (int y = 0; y < result.Y; y++)
+                for (int x = 0; x < result.X; x++)
                 {
-                    for (int x = 0; x < result.X; x++)
+                    var kernelRowBegin = 0;
+                    var sum = 0.0;
+                    for (int row = 0; row < kernel.Y; row++)
                     {
-                        var sum = 0.0;
-                        for (int row = 0; row < kernel.Y; row++)
+                        kernelRowBegin += kernel.X;
+                        var kernelRowBeginPtr = (double*)kernel.Pointer + kernelRowBegin;
+                        var imageRowBeginPtr = (double*)image.Pointer + (row + y) * image.X + x;
+                        for (int column = 0; column < kernel.X; column++)
                         {
-                            var kernelRowBegin = row * kernel.X;
-                            var imageRowBegin = (row + y) * image.X;
-                            for (int column = 0; column < kernel.X; column++)
-                            {
-                                var v = *((double*)kernel.Pointer + kernelRowBegin + column) * *((double*)image.Pointer + imageRowBegin + column + x);
-                                sum += (v < 0 ? 0 : v);
-                            }
+                            kernelRowBeginPtr++;
+                            imageRowBeginPtr++;
+                            var v = *(kernelRowBeginPtr) * *(imageRowBeginPtr);
+                            sum += (v < 0 ? 0 : v);
                         }
-                        result[x, y] = sum;
                     }
+                    result[x, y] = sum;
                 }
-                return result;
             }
+            return result;
         }
     }
     public static ConvolutionNeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
