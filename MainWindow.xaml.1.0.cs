@@ -34,7 +34,6 @@ public partial class MainWindow : Window
     private bool[,] _space = new bool[40, 40];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
     private Point[] _points = new Point[] { new Point(400, 400) };
-    private int _size = 100;
     Roller R1 = new Roller(PI / 3);
     Roller R2 = new Roller(-PI / 3);
     private int _f = 0;
@@ -61,11 +60,8 @@ public partial class MainWindow : Window
     private List<Matrix> _minuses = new List<Matrix> { };
     private double _radiansInGradusCount = 180 / Math.PI;
     private long _time;
-    private Point _a;
-    private Point _b;
-    private Point _c;
-    private Point _d;
-    private int _clicksCount;
+    private Stream _file = File.Open("Cat.png", FileMode.Open);
+    private PngBitmapDecoder _decoder;
     enum Direct
     {
         L,
@@ -75,6 +71,7 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
+        _decoder = new PngBitmapDecoder(_file, BitmapCreateOptions.None, BitmapCacheOption.Default);
         _time = Stopwatch.GetTimestamp();
         InitializeComponent();
         _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 5*5", 0.01, 10);
@@ -177,16 +174,17 @@ public partial class MainWindow : Window
                 _space[x, y] = true;
             }
         }
+        else
+        {
+            return;
+        }
         var exp = Exp(ImaginaryOne * _f * 0.1);
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var c = new Complex(y / 100.0 - 4, x / 100.0 - 4);
-                var h = (int)(((c * c * c + 5 * c * c - 12 * c + 3) / (c * c + 1)).Magnitude * _radiansInGradusCount);
-                var v = (byte)(255 - c.Magnitude * 30);
-                var color = HsvToRgb(h, 255, 255);
+                var color = 1;
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
