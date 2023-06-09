@@ -106,12 +106,12 @@ static class SpecialMath
     {
         var c = new Complex(0, 0);
         var a = new Complex(x, y);
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 256; i++)
         {
-            c = Pow(c - k, -k) + a;
+            c = c * c + a;
             if (c.Magnitude > 2)
             {
-                return 30 - i;
+                return (int)(255 - (i * i + 0.0) / 255);
             }
         }
         return 0;
