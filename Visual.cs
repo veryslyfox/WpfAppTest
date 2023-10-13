@@ -3,7 +3,6 @@ using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Objects.Data;
 
 namespace Objects
 {
@@ -29,10 +28,6 @@ namespace Objects
             }
             _bitmap.AddDirtyRect(new System.Windows.Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             _bitmap.Unlock();
-        }
-        public static void Render(Bitmap map, WriteableBitmap bitmap)
-        {
-
         }
     }
     struct Pixel

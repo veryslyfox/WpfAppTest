@@ -1,2 +1,0 @@
-$${\displaystyle R=R_{Z}(\gamma )\cdot R_{X}(\beta )\cdot R_{Z}(\alpha )=\left({\begin{array}{ccc}\cos(\alpha )\cos(\gamma )-\cos(\beta )\sin(\alpha )\sin(\gamma )&-\cos(\gamma )\sin(\alpha )-\cos(\alpha )\cos(\beta )\sin(\gamma )&\sin(\beta )\sin(\gamma )\\\cos(\beta )\cos(\gamma )\sin(\alpha )+\cos(\alpha )\sin(\gamma )&\cos(\alpha )\cos(\beta )\cos(\gamma )-\sin(\alpha )\sin(\gamma )&-\cos(\gamma )\sin(\beta )\\\sin(\alpha )\sin(\beta )&\cos(\alpha )\sin(\beta )&\cos(\beta )\\\end{array}}\right).}
-\Gamma (z)=\int \limits _{0}^{1}(-\ln {x})^{{z-1}}\,dx

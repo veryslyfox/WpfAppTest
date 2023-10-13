@@ -45,50 +45,8 @@ public static Int32Rect GetActiveSize(bool[,] image)
         minY = minY == -1 ? 0 : minY;
         return new(minX, minY, maxX - minX, maxY - minY);
     }
-    class Noise
-{
-    public Noise(int freq, Random random)
-    {
-        Dots = new double[freq];
-        Dots = Dots.Select(a => random.NextDouble()).ToArray();
-    }
-    public double Function(double value)
-    {
-        return Dots.Select((x, n) => x * Exp(-(value - n) * (value - n))).Sum();
-    }
-    double[] Dots;
-}
-class Noise2D
-{
-    public Noise2D(int freq, Random random)
-    {
-        Dots = new double[freq][];
-        for (int i = 0; i < freq; i++)
-        {
-            var rand = new double[freq];
-            rand = rand.Select(a => random.NextDouble()).ToArray();
-            Dots[i] = rand;
-        }
-        Freq = freq;
-    }
-    public double Function(double x, double y)
-    {
-        var sum = 0.0;
-        for (int row = 0; row < Freq; row++)
-        {
-            for (int column = 0; column < Freq; column++)
-            {
-                var dx = column - x;
-                var dy = row - y;
-                sum += Exp(-dx * dx - dy * dy) * Dots[column][row];
-            }
-        }
-        return sum;
-    }
-    double[][] Dots;
 
-    public int Freq { get; }
-}
+
 class Sand
 {
     public Sand(int[,] ints)

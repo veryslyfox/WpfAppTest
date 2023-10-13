@@ -10,8 +10,6 @@ using System.Windows.Input;
 using Button = Objects.Button;
 using Objects;
 using Objects.SpecialMath;
-using Objects.Data;
-using Style = Objects.Data.Style;
 using static System.Math;
 using static System.Numerics.Complex;
 using System.Numerics;
@@ -21,7 +19,6 @@ using Vector = System.Windows.Vector;
 using System.Windows.Controls;
 using System.Collections;
 using System.Runtime.InteropServices;
-
 namespace WpfApp1;
 
 public partial class MainWindow : Window
@@ -31,7 +28,6 @@ public partial class MainWindow : Window
     private readonly WriteableBitmap _bitmap;
     private readonly Random _rng = new();
     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-    private bool[,] _space = new bool[40, 40];
     private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
     private Point[] _points = new Point[] { new Point(400, 400) };
     Roller R1 = new Roller(PI / 3);
@@ -55,13 +51,12 @@ public partial class MainWindow : Window
     public int _sorted;
     public int _step = 6399;
     private bool _clicked;
-    private ConvolutionNeuralNetwork _network;
     private List<Matrix> _pluses = new List<Matrix> { };
     private List<Matrix> _minuses = new List<Matrix> { };
-    private double _radiansInGradusCount = 180 / Math.PI;
     private long _time;
     private Stream _file = File.Open("Cat.png", FileMode.Open);
-    private PngBitmapDecoder _decoder;
+    private List<Point> _control = new();
+    private byte[,] _image = new byte[800, 800];
     enum Direct
     {
         L,
@@ -71,120 +66,133 @@ public partial class MainWindow : Window
     }
     public MainWindow()
     {
-        _decoder = new PngBitmapDecoder(_file, BitmapCreateOptions.None, BitmapCacheOption.Default);
-        _time = Stopwatch.GetTimestamp();
+        // for (int y = 0; y < 800; y++)
+        // {
+        //     for (int x = 0; x < 800; x++)
+        //     {
+        //         _noise[x, y] = (byte)_rng.Next(0, 2);   
+        //     }
+        // }
+        // for (int y = 0; y < 737; y++)
+        // {
+        //     for (int x = 0; x < 737; x++)
+        //     {
+        //         var sum = 0;
+        //         for (int row = 0; row < 64; row++)
+        //         {
+        //             for (int column = 0; column < 64; column++)
+        //             {
+        //                 sum += _noise[x + column, y + row];
+        //             }
+        //         }
+        //         _noise[x, y] = (byte)(sum);
+        //     }
+        // }
+        // var images = ReadImages("train-images.idx3-ubyte");
+        // for (int y = 0; y < 28; y++)
+        // {
+        //     for (int x = 0; x < 28; x++)
+        //     {
+
+        //         var img = images[y * 10 + x];
+        //         for (int row = 0; row < 28; row++)
+        //         {
+        //             for (int column = 0; column < 28; column++)
+        //             {
+        //                 _image[x * 28 + column, y * 28 + row] = img.Data[column, row];
+        //             }
+        //         }
+        //     }
+        // }
+        // _time = Stopwatch.GetTimestamp();
         InitializeComponent();
-        _network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 5*5", 0.01, 10);
-        _bitmap = new((int)image.Width, (int)image.Height, 96, 100, PixelFormats.Bgr32, null);
-        image.Source = _bitmap;
+        //_network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 5*5", 0.01, 10);
         _timer.Interval = TimeSpan.FromSeconds(0.000001);
+        _bitmap = new WriteableBitmap(800, 800, 96, 96, PixelFormats.Bgr32, null);
+        image.Source = _bitmap;
         _timer.Tick += Tick;
         _timer.Start();
-        MouseLeftButtonDown += ClickHandler;
         MouseLeftButtonUp += UpHandler;
-        KeyDown += KeyHandler;
     }
-
-    private void KeyHandler(object sender, KeyEventArgs args)
+    byte[] ReadLabels(string labelsFilepath)
     {
-        var key = args.Key;
-        switch (key)
+        var labels = new byte[60000];
+        using (var file = File.Open(labelsFilepath, FileMode.Open))
         {
-            case Key.P:
-                {
-                    Matrix matrix = Matrix.Generate(40, 40);
-                    for (int y = 0; y < 40; y++)
-                    {
-                        for (int x = 0; x < 40; x++)
-                        {
-                            matrix[x, y] = _space[x, y] ? 0 : 1;
-                        }
-                    }
-                    _pluses.Add(matrix);
-                    _space = new bool[40, 40];
-                    break;
-                }
-            case Key.M:
-                {
-                    Matrix matrix = Matrix.Generate(40, 40);
-                    for (int y = 0; y < 40; y++)
-                    {
-                        for (int x = 0; x < 40; x++)
-                        {
-                            matrix[x, y] = _space[x, y] ? 0 : 1;
-                        }
-                    }
-                    _minuses.Add(matrix);
-                    _space = new bool[40, 40];
-                    break;
-                }
-            case Key.C:
-                {
-                    _space = new bool[40, 40];
-                    break;
-                }
-            case Key.S:
-                {
-                    _time = Stopwatch.GetTimestamp();
-                    for (int i = 0; i < 10; i++)
-                    {
-                        _network.CorrectAll(Error);
-                    }
-                    _network.Write("Weights", FileMode.OpenOrCreate);
-                    MessageBox.Show(((double)(Stopwatch.GetTimestamp() - _time) / Stopwatch.Frequency).ToString());
-                }
-                break;
+            var reader = new BinaryReader(file);
+            var magic = reader.ReadInt32();
+            var size = reader.ReadInt32();
+            magic = Reverse(magic);
+            size = Reverse(size);
+            if (magic != 2049)
+                throw new ArgumentException("Magic number mismatch, expected 2049");
+            labels = reader.ReadBytes(60000);
         }
+        return labels;
     }
-    double Error(ConvolutionNeuralNetwork network)
+    int Reverse(int value)
     {
-        var sum = 0.0;
-        foreach (var item in _pluses)
-        {
-            var value = network.Propagate(item)[0, 0];
-            sum += Abs(Round(value * 2) / 2 - 1);
-        }
-        foreach (var item in _minuses)
-        {
-            var value = network.Propagate(item)[0, 0];
-            sum += Abs(Round(value * 2) / 2);
-        }
-        return sum;
+        var b1 = value & 255;
+        var b2 = (value >> 8) & 255;
+        var b3 = (value >> 16) & 255;
+        var b4 = (value >> 24) & 255;
+        return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
     }
-    double F(double val)
+    Image[] ReadImages(string imagesFilepath)
     {
-        if (val < 2)
+        Image[] images;
+        using (var file = File.Open(imagesFilepath, FileMode.Open))
         {
-            return val;
-        }
-        else
-        {
-            return val * F(val - 1);
-        }
-    }
-
-    private void Tick(object? sender, EventArgs e)
-    {
-        if (_clicked)
-        {
-            var x = (int)(Mouse.GetPosition(this).X / 20);
-            var y = (int)(Mouse.GetPosition(this).Y / 20);
-            if (x is < 40 and > 0 && y is < 40 and > 0)
+            var reader = new BinaryReader(file);
+            var magic = reader.ReadInt32();
+            var size = reader.ReadInt32();
+            var rows = reader.ReadInt32();
+            var cols = reader.ReadInt32();
+            magic = Reverse(magic);
+            size = Reverse(size);
+            rows = Reverse(rows);
+            cols = Reverse(cols);
+            var rowsXcols = rows * cols;
+            images = new Image[size];
+            if (magic != 2051)
+                throw new ArgumentException("Magic number mismatch, expected 2051");
+            for (int i = 0; i < size; i++)
             {
-                _space[x, y] = true;
+                var image_data = reader.ReadBytes(rowsXcols);
+                var image = Image.Deserialize(image_data, rows, cols);
+                images[i] = image;
             }
         }
-        else
+        return images;
+    }
+    class Image
+    {
+        public Image(byte[,] data)
         {
-            return;
+            Data = data;
         }
-        var exp = Exp(ImaginaryOne * _f * 0.1);
+        public static Image Deserialize(byte[] bytes, int rows, int cols)
+        {
+            var data = new byte[cols, rows];
+            for (int row = 0; row < rows; row++)
+            {
+                for (int column = 0; column < cols; column++)
+                {
+                    data[column, row] = bytes[row * rows + column];
+                }
+            }
+            return new(data);
+        }
+        public byte[,] Data { get; }
+    }
+    private void Tick(object? sender, EventArgs e)
+    {
         _bitmap.Lock();
         for (int y = 0; y < _bitmap.PixelHeight; y++)
         {
             for (int x = 0; x < _bitmap.PixelWidth; x++)
             {
-                var color = 1;
+                var color = Color.FromRgb((byte)x, (byte)y, (byte)(x + y * _f * 0.01));
                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
                 unsafe
                 {
@@ -192,7 +200,6 @@ public partial class MainWindow : Window
                 }
             }
         }
-        _step++;
         _f++;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
         _bitmap.Unlock();
@@ -205,33 +212,6 @@ public partial class MainWindow : Window
         }
         var previous = Iterate(value, c, p - 1);
         return previous * previous + c;
-    }
-    private void ClickHandler(object sender, MouseEventArgs args)
-    {
-        // var clickPoint = args.GetPosition(this);
-        // switch (_clicksCount)
-        // {
-        //     case 0:
-        //         _a = clickPoint;
-        //         break;
-        //     case 1:
-        //         _b = clickPoint;
-        //         break;
-        //     case 2:
-        //         _c = clickPoint;
-        //         break;
-        //     case 3:
-        //         _d = clickPoint;
-        //         for (double t = 0; t < 1; t += 0.001)
-        //         {
-        //             var point = SpecialMath.BezierCurve(t, _a, _b, _c, _d);
-        //             _space[(int)point.X, (int)point.Y] = true;
-        //         }
-        //         _clicksCount = 0;
-        //         return;
-        // }
-        // _clicksCount++;
-        _clicked = true;
     }
     private void UpHandler(object sender, MouseEventArgs args)
     {
@@ -335,6 +315,21 @@ public class Matrix
             }
         }
     }
+    public unsafe Matrix(double[,] values)
+    {
+        X = values.GetLength(0);
+        Y = values.GetLength(1);
+        Weights = new double[X * Y];
+        _gcHandle = GCHandle.Alloc(Weights, GCHandleType.Pinned);
+        Pointer = _gcHandle.AddrOfPinnedObject();
+        var pointer = (double*)Pointer;
+        var index = 0;
+        foreach (var item in values)
+        {
+            index++;
+            *(pointer + index) = item;
+        }
+    }
     public static Matrix Create(params Vector[] vectors)
     {
         return new(vectors);
@@ -367,6 +362,32 @@ public class Matrix
     //     return new(value.Weights.Select(z => -z).ToArray());
     // }
     public double[] Weights { get; }
+    Matrix Transpone()
+    {
+        var result = Generate(Y, X);
+        for (int y = 0; y < Y; y++)
+        {
+            for (int x = 0; x < X; x++)
+            {
+                result[X, Y] = this[Y, X];
+            }
+        }
+        return result;
+    }
+    public Matrix T
+    {
+        get
+        {
+            if (!TCalled)
+            {
+                _transponeMemo = Transpone();
+                TCalled = true;
+            }
+            return _transponeMemo;
+        }
+    }
+    Matrix _transponeMemo = Matrix.Generate(0, 0, 0);
+    bool TCalled;
     public static Matrix Generate(int x, int y, double d = 0)
     {
         var array = new double[x];
@@ -593,6 +614,7 @@ class ConvolutionNeuralNetwork
 
     public static Matrix Convolution(Matrix image, Matrix kernel)
     {
+
         unsafe
         {
             var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
@@ -774,3 +796,48 @@ class LorenzDot
         proj[(int)(Abs(X + 400)), (int)(Abs(Y + 400))] = 255;
     }
 }
+class Noise
+{
+    public Noise(int freq, Random random)
+    {
+        Dots = new double[freq];
+        Dots = Dots.Select(a => random.NextDouble()).ToArray();
+    }
+    public double Function(double value)
+    {
+        return Dots.Select((x, n) => x * Exp(-(value - n) * (value - n))).Sum();
+    }
+    double[] Dots;
+}
+class Noise2D
+{
+    public Noise2D(int freq, Random random)
+    {
+        Dots = new double[freq][];
+        for (int i = 0; i < freq; i++)
+        {
+            var rand = new double[freq];
+            rand = rand.Select(a => random.NextDouble()).ToArray();
+            Dots[i] = rand;
+        }
+        Freq = freq;
+    }
+    public double Function(double x, double y)
+    {
+        var sum = 0.0;
+        for (int row = 0; row < Freq; row++)
+        {
+            for (int column = 0; column < Freq; column++)
+            {
+                var dx = column - x;
+                var dy = row - y;
+                sum += Exp(-(dx * dx + dy * dy)) * Dots[column][row];
+            }
+        }
+        return sum;
+    }
+    double[][] Dots;
+
+    public int Freq { get; }
+}
+//⌘

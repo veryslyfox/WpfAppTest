@@ -99,14 +99,6 @@ struct Triangle
         BC = new Vector3(b, c);
         Sign = 1;
     }
-    public bool IsColored(int x, int y, double displayDistance, Point3 observer)
-    {
-        bool Right(Vector3 vector3)
-        {
-            return vector3.Projection(observer, displayDistance).DotRight(x, y);
-        }
-        return Right(AB) && Right(AC) && Right(BC);
-    }
     public Vector3S Normal()
     {
         return ((Vector3S)A) * ((Vector3S)B);
@@ -129,9 +121,16 @@ class TriangleModel
     {
         Triangles = triangles;
     }
-    public TriangleModel(Point3[] points, params (int, int, int)[] values)
-    {
-        Triangles = values.Select(n => new Triangle(points[n.Item1], points[n.Item2], points[n.Item3])).ToArray();
-    }
     public Triangle[] Triangles { get; }
+}
+class Camera
+{
+    public Camera(Point3 position, Vector3 direct)
+    {
+        Position = position;
+        Direct = direct;
+    }
+
+    public Point3 Position { get; }
+    public Vector3 Direct { get; }
 }

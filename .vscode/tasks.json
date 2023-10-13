@@ -9,8 +9,8 @@
                 "build",
                 "${workspaceFolder}/WpfApp1.csproj",
                 "/property:GenerateFullPaths=true",
-                "-c",
-                "Release",
+                //"-c",
+                //"Release",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"

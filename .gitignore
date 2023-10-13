@@ -1,7 +1,5 @@
-# Shared
 .idea/
 
-# .NET
 .vs/
 *.suo
 *.csproj.user
@@ -12,3 +10,5 @@ packages/
 **/Properties/*.p12
 Weights/
 # Local
+.png
+.gitignore

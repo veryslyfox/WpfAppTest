@@ -9,7 +9,6 @@ using System.Windows.Media;
 using VolumeObjects;
 using Vector = Objects.Vector;
 using System.Collections.Generic;
-using Objects.Data;
 
 static class SpecialMath
 {
@@ -260,6 +259,29 @@ static class SpecialMath
         var c4 = ti * ti * ti;
         return new(c1 * a.X + c2 * b.X + c3 * c.X + c4 * d.X, c1 * a.Y + c2 * b.Y + c3 * c.Y + c4 * d.Y);
     }
+    public static Point BezierCurve(double t, List<Point> controls)
+    {
+        var ti = 1 - t;
+        var c = new double[Binoms.Length];
+        var value = Pow(t, c.Length);
+        for (int i = 0; i < c.Length; i++)
+        {
+            c[i] = value;
+            value /= t;
+            value *= (1 - t);
+            if (value == double.NaN)
+            {
+                value = 0;
+            }
+        }
+        Point result = new();
+        for (int i = 0; i < controls.Count; i++)
+        {
+            result += ((System.Windows.Vector)new Point(controls[i].X * Binoms[i] * c[i], controls[i].Y * Binoms[i] * c[i]));
+        }
+        return result;
+    }
+    public static int[] Binoms = new int[] { };
     public static Complex Fractal(Complex complex, int precision)
     {
         var result = complex;
