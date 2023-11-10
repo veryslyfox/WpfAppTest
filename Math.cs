@@ -6,7 +6,6 @@ using System.Windows;
 using System;
 using System.Numerics;
 using System.Windows.Media;
-using VolumeObjects;
 using Vector = Objects.Vector;
 using System.Collections.Generic;
 
@@ -105,12 +104,12 @@ static class SpecialMath
     {
         var c = new Complex(0, 0);
         var a = new Complex(x, y);
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < k; i++)
         {
             c = c * c + a;
-            if (c.Magnitude > 2)
+            if (c.Magnitude > 1)
             {
-                return (int)(255 - (i * i + 0.0) / 255);
+                return (int)(k - i);
             }
         }
         return 0;

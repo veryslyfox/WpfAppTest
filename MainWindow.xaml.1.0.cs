@@ -1,843 +1,1560 @@
-using System.IO;
-using System;
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using System.Collections.Generic;
-using System.Windows.Input;
-using Button = Objects.Button;
-using Objects;
-using Objects.SpecialMath;
-using static System.Math;
-using static System.Numerics.Complex;
-using System.Numerics;
-using Objects.VolumeObjects;
-using System.Threading;
-using Vector = System.Windows.Vector;
-using System.Windows.Controls;
-using System.Collections;
-using System.Runtime.InteropServices;
-namespace WpfApp1;
+// using System;
+// using System.IO;
+// using System.Diagnostics;
+// using System.Windows;
+// using System.Windows.Media;
+// using System.Windows.Media.Imaging;
+// using System.Windows.Threading;
+// using System.Collections.Generic;
+// using System.Windows.Input;
+// using Objects;
+// using Objects.SpecialMath;
+// using Vector = Objects.Vector;
+// using static System.Math;
+// namespace WpfApp1;
+// partial class MainWindow
+// {
+//     static int _x, _y;
+//     static Rules _rules;
+//     private readonly DispatcherTimer _timer = new();
+//     private readonly WriteableBitmap _bitmap;
+//     private readonly Random _rng = new();
+//     private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
+//     private int[,] _field = new int[400, 400];
+//     private int[] _survival;
+//     private int[] _birth;
+//     private int[] _f;
+//     private int[] _k;
+//     private int[] _l;
+//     private bool _stop;
+//     private Color[] Colors = new Color[] { Color.FromRgb(255, 255, 255), Color.FromRgb(0, 210, 100),  Color.FromRgb(255, 0, 0)};
+//     private double _prob;
+//     private int _cell;
+//     private double _b;
+//     private double _a;
 
-public partial class MainWindow : Window
-{
-    private Color[] Colors = new Color[] { Color.FromRgb(0, 0, 0), Color.FromRgb(255, 0, 0), Color.FromRgb(0, 255, 0), Color.FromRgb(0, 0, 255), Color.FromRgb(255, 255, 0), Color.FromRgb(255, 0, 255), Color.FromRgb(0, 255, 255), Color.FromRgb(0, 0, 0), Color.FromRgb(255, 255, 255), Color.FromRgb(127, 255, 127) };
-    private readonly DispatcherTimer _timer = new();
-    private readonly WriteableBitmap _bitmap;
-    private readonly Random _rng = new();
-    private static readonly double TimeStep = 1.0 / Stopwatch.Frequency;
-    private int[] _ticks = new int[] { 128, 64, 32, 16, 8, 4, 2, 1 };
-    private Point[] _points = new Point[] { new Point(400, 400) };
-    Roller R1 = new Roller(PI / 3);
-    Roller R2 = new Roller(-PI / 3);
-    private int _f = 0;
-    Dictionary<Direct, int> DirectX = new Dictionary<Direct, int>
-    {
-        {Direct.L, -1},
-        {Direct.U, 0},
-        {Direct.R, 1},
-        {Direct.D, 0},
-    };
-    Dictionary<Direct, int> DirectY = new Dictionary<Direct, int>
-    {
-        {Direct.L, 0},
-        {Direct.U, 1},
-        {Direct.R, 0},
-        {Direct.D, -1},
-    };
-    int[] Roll = new int[] { 1, 0, 1 };
-    public int _sorted;
-    public int _step = 6399;
-    private bool _clicked;
-    private List<Matrix> _pluses = new List<Matrix> { };
-    private List<Matrix> _minuses = new List<Matrix> { };
-    private long _time;
-    private Stream _file = File.Open("Cat.png", FileMode.Open);
-    private List<Point> _control = new();
-    private byte[,] _image = new byte[800, 800];
-    enum Direct
-    {
-        L,
-        U,
-        R,
-        D,
-    }
-    public MainWindow()
-    {
-        // for (int y = 0; y < 800; y++)
-        // {
-        //     for (int x = 0; x < 800; x++)
-        //     {
-        //         _noise[x, y] = (byte)_rng.Next(0, 2);   
-        //     }
-        // }
-        // for (int y = 0; y < 737; y++)
-        // {
-        //     for (int x = 0; x < 737; x++)
-        //     {
-        //         var sum = 0;
-        //         for (int row = 0; row < 64; row++)
-        //         {
-        //             for (int column = 0; column < 64; column++)
-        //             {
-        //                 sum += _noise[x + column, y + row];
-        //             }
-        //         }
-        //         _noise[x, y] = (byte)(sum);
-        //     }
-        // }
-        // var images = ReadImages("train-images.idx3-ubyte");
-        // for (int y = 0; y < 28; y++)
-        // {
-        //     for (int x = 0; x < 28; x++)
-        //     {
+//     enum Rules
+//     {
+//         Conway,
+//         Avgust,
+//         Ulam,
+//         HighLife,
+//         AvgustConway,
+//         LifeWithoutDead,
+//         DayAndNight,
+//         Avgust2,
+//         Wind,
+//         StableLife,
+//         NotStableLife,
+//         HardLife,
+//         Replace,
+//         Lines,
+//         Bomb,
+//         Triangle,
+//         SeedsWithoutDead,
+//         Dragon,
+//         Circle,
+//         SeedsLight,
+//         BigLife,
+//         Fire,
+//         Replicator,
+//         Bombplicator,
+//         HexSeeds,
+//         Rakes,
+//         Brain,
+//         Cross,
+//         Social,
+//         Wireworld,
+//         LogicRule,
+//         War,
+//     }
+//     public MainWindow()
+//     {
+//         _a = 0.4;
+//         _b = 0.6;
+//         _stop = true;
+//         //B34w/S23"birth 3 4&conf212 survival 23"
+//         // B347/S3456/F038/K234567/L0346
+//         _birth = new int[] { 2 };
+//         _survival = new int[] { };
+//         _f = new int[] { 0, 1, 2 };
+//         _k = new int[] {  };
+//         _l = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+//         _prob = 0.02;
+//         _cell = 1;
+//         _x = _field.GetLength(0) / 2;
+//         _y = _field.GetLength(1) / 2;
+//         _rules = Rules.Conway;
+//         InitializeComponent();
+//         _bitmap = new(800, 800, 96, 100, PixelFormats.Bgr32, null);
+//         image.Source = _bitmap;
+//         _timer.Interval = TimeSpan.FromSeconds(0.00001);
+//         _timer.Tick += Tick;
+//         KeyDown += ProcessInput;
+//         _timer.Start();
+//     }
+//     private void Tick(object? sender, EventArgs e)
+//     {
+//         _bitmap.Lock();
+//         for (int y = 0; y < _bitmap.PixelHeight; y++)
+//         {
+//             for (int x = 0; x < _bitmap.PixelWidth; x++)
+//             {
+//                 var color = Colors[_field[x / 2, y / 2]];
+//                 var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
+//                 unsafe
+//                 {
+//                     *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
+//                 }
+//             }
+//         }
 
-        //         var img = images[y * 10 + x];
-        //         for (int row = 0; row < 28; row++)
-        //         {
-        //             for (int column = 0; column < 28; column++)
-        //             {
-        //                 _image[x * 28 + column, y * 28 + row] = img.Data[column, row];
-        //             }
-        //         }
-        //     }
-        // }
-        // _time = Stopwatch.GetTimestamp();
-        InitializeComponent();
-        //_network = ConvolutionNeuralNetwork.GetRandomNetwork(0, 1, "6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 6*6, 5*5", 0.01, 10);
-        _timer.Interval = TimeSpan.FromSeconds(0.000001);
-        _bitmap = new WriteableBitmap(800, 800, 96, 96, PixelFormats.Bgr32, null);
-        image.Source = _bitmap;
-        _timer.Tick += Tick;
-        _timer.Start();
-        MouseLeftButtonUp += UpHandler;
-    }
-    byte[] ReadLabels(string labelsFilepath)
-    {
-        var labels = new byte[60000];
-        using (var file = File.Open(labelsFilepath, FileMode.Open))
-        {
-            var reader = new BinaryReader(file);
-            var magic = reader.ReadInt32();
-            var size = reader.ReadInt32();
-            magic = Reverse(magic);
-            size = Reverse(size);
-            if (magic != 2049)
-                throw new ArgumentException("Magic number mismatch, expected 2049");
-            labels = reader.ReadBytes(60000);
-        }
-        return labels;
-    }
-    int Reverse(int value)
-    {
-        var b1 = value & 255;
-        var b2 = (value >> 8) & 255;
-        var b3 = (value >> 16) & 255;
-        var b4 = (value >> 24) & 255;
-        return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-    }
-    Image[] ReadImages(string imagesFilepath)
-    {
-        Image[] images;
-        using (var file = File.Open(imagesFilepath, FileMode.Open))
-        {
-            var reader = new BinaryReader(file);
-            var magic = reader.ReadInt32();
-            var size = reader.ReadInt32();
-            var rows = reader.ReadInt32();
-            var cols = reader.ReadInt32();
-            magic = Reverse(magic);
-            size = Reverse(size);
-            rows = Reverse(rows);
-            cols = Reverse(cols);
-            var rowsXcols = rows * cols;
-            images = new Image[size];
-            if (magic != 2051)
-                throw new ArgumentException("Magic number mismatch, expected 2051");
-            for (int i = 0; i < size; i++)
-            {
-                var image_data = reader.ReadBytes(rowsXcols);
-                var image = Image.Deserialize(image_data, rows, cols);
-                images[i] = image;
-            }
-        }
-        return images;
-    }
-    class Image
-    {
-        public Image(byte[,] data)
-        {
-            Data = data;
-        }
-        public static Image Deserialize(byte[] bytes, int rows, int cols)
-        {
-            var data = new byte[cols, rows];
-            for (int row = 0; row < rows; row++)
-            {
-                for (int column = 0; column < cols; column++)
-                {
-                    data[column, row] = bytes[row * rows + column];
-                }
-            }
-            return new(data);
-        }
-        public byte[,] Data { get; }
-    }
-    private void Tick(object? sender, EventArgs e)
-    {
-        _bitmap.Lock();
-        for (int y = 0; y < _bitmap.PixelHeight; y++)
-        {
-            for (int x = 0; x < _bitmap.PixelWidth; x++)
-            {
-                var color = Color.FromRgb((byte)x, (byte)y, (byte)(x + y * _f * 0.01));
-                var ptr = _bitmap.BackBuffer + x * 4 + _bitmap.BackBufferStride * y;
-                unsafe
-                {
-                    *((int*)ptr) = (color.R << 16) | (color.G << 8) | (color.B);
-                }
-            }
-        }
-        _f++;
-        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelHeight, _bitmap.PixelHeight));
-        _bitmap.Unlock();
-    }
-    Complex Iterate(Complex value, Complex c, int p)
-    {
-        if (p == 0)
-        {
-            return value;
-        }
-        var previous = Iterate(value, c, p - 1);
-        return previous * previous + c;
-    }
-    private void UpHandler(object sender, MouseEventArgs args)
-    {
-        _clicked = false;
-    }
-    private Color FromRgbSaturated(int r, int g, int b)
-    {
-        if (r < 0)
-        {
-            r = 0;
-        }
-        else if (r > 255)
-        {
-            r = 255;
-        }
+//         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+//         _bitmap.Unlock();
+//     }
+//     public bool IsRect(int x, int y)
+//     {
+//         var current = 0;
+//         var prev = 0;
+//         for (int i = 400; i < x; i++)
+//         {
+//             for (int j = 400; j < y; j++)
+//             {
+//                 _field[i, j] = 1;
+//             }
+//         }
+//         return true;
+//     }
+//     public Color HsvToRgb(int h, byte s, byte v)
+//     {
+//         var result = new Color();
+//         var hue = h % 360;
+//         var hv = (hue % 60) * 255 / 60;
+//         var a = 0;
+//         var b = hv;
+//         var c = 255 - hv;
+//         var d = 255;
+//         void DoubleInterval(int min, int max, int r, int g, int b)
+//         {
+//             if (min <= hue && max > hue)
+//             {
+//                 result = Normalize(FromRgb(r, g, b), v);
+//             }
+//         }
+//         DoubleInterval(0, 60, d, b, a);
+//         DoubleInterval(60, 120, c, d, a);
+//         DoubleInterval(120, 180, a, d, b);
+//         DoubleInterval(180, 240, a, c, d);
+//         DoubleInterval(240, 300, b, a, d);
+//         DoubleInterval(300, 360, d, a, c);
+//         return Interpolation(result, Color.FromRgb(v, v, v), s);
+//     }
+//     public Color Interpolation(Color a, Color b, byte c)
+//     {
+//         return FromRgb((a.R * c + b.R * (255 - c)) / 255, (a.G * c + b.G * (255 - c)) / 255, (a.B * c + b.B * (255 - c)) / 255);
+//     }
+//     private Color FromRgb(int r, int g, int b)
+//     {
+//         return Color.FromRgb(((byte)(r & 255)), ((byte)(g & 255)), ((byte)(b & 255)));
+//     }
+//     private Color FromSRgb(int r, int g, int b)
+//     {
+//         return Color.FromRgb(Saturate(r), Saturate(g), Saturate(b));
+//     }
+//     private byte Saturate(int value)
+//     => value >= 0
+//         ? value <= 255
+//             ? (byte)value
+//             : (byte)255
+//         : (byte)0;
+//     public Color Normalize(Color color, byte lightness)
+//     {
+//         var r = color.R;
+//         var g = color.G;
+//         var b = color.B;
+//         var max = Math.Max(r, Math.Max(g, b));
+//         if (max == 0)
+//         {
+//             return Color.FromRgb(lightness, lightness, lightness);
+//         }
+//         var normalizer = (double)lightness / max;
+//         return Color.FromRgb((byte)(r * normalizer), ((byte)(g * normalizer)), ((byte)(b * normalizer)));
 
-        if (g < 0)
-        {
-            g = 0;
-        }
-        else if (g > 255)
-        {
-            g = 255;
-        }
+//     }
+//     void ProcessInput(object sender, KeyEventArgs args)
+//     {
+//         var k = args;
+//         switch (k.Key)
+//         {
+//             case Key.Left:
+//                 if (_x != 0)
+//                     _x--;
+//                 break;
 
-        if (b < 0)
-        {
-            b = 0;
-        }
-        else if (b > 255)
-        {
-            b = 255;
-        }
+//             case Key.Right:
+//                 if (_x < _field.GetLength(0) - 1)
+//                     _x++;
+//                 break;
 
-        return Color.FromRgb((byte)r, (byte)g, (byte)b);
-    }
-    private Color FromRgb(int r, int g, int b)
-    {
-        return Color.FromRgb(((byte)(r & 255)), ((byte)(g & 255)), ((byte)(b & 255)));
-    }
-    public Color Normalize(Color color, byte lightness)
-    {
-        var r = color.R;
-        var g = color.G;
-        var b = color.B;
-        var max = Math.Max(r, Math.Max(g, b));
-        if (max == 0)
-        {
-            return Color.FromRgb(lightness, lightness, lightness);
-        }
-        var normalizer = (double)lightness / max;
-        return FromRgb((int)(r * normalizer), ((int)(g * normalizer)), ((int)(b * normalizer)));
-    }
-    public Color Interpolation(Color a, Color b, byte c)
-    {
-        return FromRgb((a.R * c + b.R * (255 - c)) / 255, (a.G * c + b.G * (255 - c)) / 255, (a.B * c + b.B * (255 - c)) / 255);
-    }
-    public Color HsvToRgb(int h, byte s, byte v)
-    {
-        var result = new Color();
-        var hue = h % 360;
-        hue = hue >= 0 ? hue : (hue + 360);
-        var hv = (hue % 60) * 255 / 60;
-        var a = 0;
-        var b = hv;
-        var c = 255 - hv;
-        var d = 255;
-        void DoubleInterval(int min, int max, int r, int g, int b)
-        {
-            if (min <= hue && max > hue)
-            {
-                result = Normalize(FromRgb(r, g, b), v);
-            }
-        }
-        DoubleInterval(0, 60, d, b, a);
-        DoubleInterval(60, 120, c, d, a);
-        DoubleInterval(120, 180, a, d, b);
-        DoubleInterval(180, 240, a, c, d);
-        DoubleInterval(240, 300, b, a, d);
-        DoubleInterval(300, 360, d, a, c);
-        return Interpolation(result, Color.FromRgb(v, v, v), s);
-    }
-}
-public class Matrix
-{
-    private GCHandle _gcHandle;
-    public unsafe Matrix(Vector[] vectors)
-    {
-        X = vectors[0].Values.Length;
-        Y = vectors.Length;
-        Weights = new double[X * Y];
-        _gcHandle = GCHandle.Alloc(Weights, GCHandleType.Pinned);
-        Pointer = _gcHandle.AddrOfPinnedObject();
-        var pointer = (double*)Pointer;
-        for (int y = 0; y < vectors.Length; y++)
-        {
-            var rowBegin = y * X;
-            for (int x = 0; x < vectors[y].Values.Length; x++)
-            {
-                *(pointer + rowBegin + x) = vectors[y].Values[x];
-            }
-        }
-    }
-    public unsafe Matrix(double[,] values)
-    {
-        X = values.GetLength(0);
-        Y = values.GetLength(1);
-        Weights = new double[X * Y];
-        _gcHandle = GCHandle.Alloc(Weights, GCHandleType.Pinned);
-        Pointer = _gcHandle.AddrOfPinnedObject();
-        var pointer = (double*)Pointer;
-        var index = 0;
-        foreach (var item in values)
-        {
-            index++;
-            *(pointer + index) = item;
-        }
-    }
-    public static Matrix Create(params Vector[] vectors)
-    {
-        return new(vectors);
-    }
-    public IntPtr Pointer;
-    public static Vector operator *(Vector vector, Matrix matrix)
-    {
-        var result = new Vector(new double[vector.Length]);
-        for (int y = 0; y < matrix.Y; y++)
-        {
-            var value = 0.0;
-            for (int x = 0; x < matrix.X; x++)
-            {
-                value += matrix[x, y] * result[x];
-            }
-            result[y] = value;
-        }
-        return result;
-    }
-    // public static Matrix operator +(Matrix a, Matrix b)
-    // {
-    //     return new(a.Weights.Zip(b.Weights, (p, q) => p + q).ToArray());
-    // }
-    // public static Matrix operator *(Matrix a, double b)
-    // {
-    //     return new(a.Weights.Select(k => k * b).ToArray());
-    // }
-    // public static Matrix operator -(Matrix value)
-    // {
-    //     return new(value.Weights.Select(z => -z).ToArray());
-    // }
-    public double[] Weights { get; }
-    Matrix Transpone()
-    {
-        var result = Generate(Y, X);
-        for (int y = 0; y < Y; y++)
-        {
-            for (int x = 0; x < X; x++)
-            {
-                result[X, Y] = this[Y, X];
-            }
-        }
-        return result;
-    }
-    public Matrix T
-    {
-        get
-        {
-            if (!TCalled)
-            {
-                _transponeMemo = Transpone();
-                TCalled = true;
-            }
-            return _transponeMemo;
-        }
-    }
-    Matrix _transponeMemo = Matrix.Generate(0, 0, 0);
-    bool TCalled;
-    public static Matrix Generate(int x, int y, double d = 0)
-    {
-        var array = new double[x];
-        Array.Fill(array, d);
-        var vector = new Vector(array);
-        var vectors = new Vector[y];
-        for (int i = 0; i < y; i++)
-        {
-            array = array.ToArray();
-            vector = new(array);
-            vectors[i] = vector;
-        }
-        return new(vectors);
-    }
-    public static Random Random = new Random();
-    public double this[int x, int y]
-    {
-        get => Weights[y * X + x];
-        set => Weights[y * X + x] = value;
-    }
-    public int X { get; set; }
-    public int Y { get; set; }
-}
-public class Vector
-{
-    public Vector(double[] values)
-    {
-        Values = values;
-    }
-    public static Vector Create(params double[] values)
-    {
-        return new(values);
-    }
-    public double[] Values { get; set; }
-    public static double operator *(Vector a, Vector b)
-    {
-        return a.Values.Zip(b.Values, (p, q) => p * q).Sum();
-    }
-    public static Vector operator +(Vector a, Vector b)
-    {
-        return new(a.Values.Zip(b.Values, (p, q) => p + q).ToArray());
-    }
-    public static Vector operator *(Vector a, double b)
-    {
-        return new(a.Values.Select(k => k * b).ToArray());
-    }
-    public static Vector operator -(Vector value)
-    {
-        return new(value.Values.Select(z => -z).ToArray());
-    }
-    public void Write()
-    {
-        foreach (var item in Values)
-        {
-            Console.Write(item + " ");
-        }
-        Console.WriteLine();
-    }
-    public Vector Relu()
-    {
-        return new(Values.Select(x => x > 0 ? x : 0).ToArray());
-    }
-    public double Sum()
-    {
-        return Values.Sum();
-    }
-    public double this[int index]
-    {
-        get => Values[index];
-        set => Values[index] = value;
-    }
-    public int Length
-    {
-        get => Values.Length;
-    }
-}
-public class NeuralNetwork
-{
-    public NeuralNetwork(Matrix[] matrices, double delta = 0.01, double alpha = 1)
-    {
-        Matrices = matrices;
-        Delta = delta;
-        Alpha = alpha;
-    }
+//             case Key.Up:
+//                 if (_y != 0)
+//                     _y--;
+//                 break;
 
-    public Matrix[] Matrices { get; set; }
-    public double Delta { get; set; }
-    public double Alpha { get; private set; }
-    public static readonly Random _rng = new Random();
-    public Vector Propagate(Vector data)
-    {
-        Vector result = data;
-        foreach (var item in Matrices)
-        {
-            data = (data * item).Relu();
-        }
-        return data;
-    }
+//             case Key.Down:
+//                 if (_y < _field.GetLength(1) - 1)
+//                     _y++;
+//                 break;
+
+//             case Key.Space:
+//                 if (_rules == Rules.Wireworld)
+//                 {
+//                     if (_field[_x, _y] < 3)
+//                     {
+//                         _field[_x, _y]++;
+//                     }
+//                     else
+//                     {
+//                         _field[_x, _y] = 0;
+//                     }
+//                 }
+//                 else if (_rules != Rules.Cross)
+//                 {
+//                     _field[_x, _y] = _field[_x, _y] == 0 ? 1 : 0;
+//                 }
+//                 else
+//                 {
+//                     if (_field[_x, _y] < 3)
+//                     {
+//                         _field[_x, _y]++;
+//                     }
+//                     else
+//                     {
+//                         _field[_x, _y] = 0;
+//                     }
+//                 }
+//                 break;
+
+//             case Key.C:
+//                 Array.Clear(_field, 0, _field.GetLength(0) * _field.GetLength(1));
+//                 break;
+
+//             case Key.I:
+//                 for (int row = 0; row < _field.GetLength(1); row++)
+//                 {
+//                     for (int column = 0; column < _field.GetLength(0); column++)
+//                     {
+//                         _field[column, row] = (int)(_field[column, row] != 0 ? 0 : 1);
+//                     }
+//                 }
+//                 break;
+//             case Key.N:
+//                 EvolutionBSFKL(null, new EventArgs());
+//                 break;
+//             case Key.R:
+//                 OnRandom(_prob, _cell);
+//                 break;
+//             case Key.S:
+//                 if (_stop)
+//                 {
+//                     _timer.Tick += EvolutionBSFKL;
+//                     _stop = false;
+//                 }
+//                 else
+//                 {
+//                     _timer.Tick -= EvolutionBSFKL;
+//                     _stop = true;
+//                 }
+//                 break;
+//         }
+//     }
+//     void Save()
+//     {
+//         Console.Clear();
+//         Console.Write("Введите название: ");
+//         var name = Console.ReadLine();
+//         var fileName = $"{name}.field";
+//         using (var file = File.Open(fileName, FileMode.Create))
+//         {
+//             var writer = new BinaryWriter(file);
+//             writer.Write(_field.GetLength(0));
+//             writer.Write(_field.GetLength(1));
+//             for (int row = 0; row < _field.GetLength(1); row++)
+//             {
+//                 for (int column = 0; column < _field.GetLength(0); column++)
+//                 {
+//                     writer.Write(_field[column, row]);
+//                 }
+//             }
+//         }
+//     }
+
+//     int GetNeighborCount3(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var count = 0;
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
+//         {
+//             count++;
+//         }
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+//         {
+//             count++;
+//         }
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             count++;
+//         }
+//         return count;
+//     }
+//     double GetNeighborCount(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0.0;
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             // count++;
+//         }
+
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column != 0 && _field[column - 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         return count;
+//     }
+//     List<int> Neighbor(int column, int row)
+//     {
+//         var count = 0;//"."
+//         var count2 = 0;//"-"
+//         var orienation = false;
+//         List<int> result = new List<int>();
+//         foreach (var item in GetNeighbor(column, row))
+//         {
+//             if (item == '-' && orienation)
+//             {
+//                 count++;
+//                 orienation = false;
+//                 result.Add(count);
+//                 count = 0;
+//             }
+//             if (item == '-' && !orienation)
+//             {
+//                 count++;
+//                 orienation = false;
+
+//             }
+//             if (item == '.' && orienation)
+//             {
+//                 count2++;
+//                 orienation = true;
+//             }
+//             if (item == '.' && !orienation)
+//             {
+//                 count2++;
+//                 orienation = true;
+//                 result.Add(count2);
+//                 count2 = 0;
+//             }
+//         }
+//         if (result.Count % 2 == 1)
+//         {
+//             result[0] += result.Last();
+//             result.RemoveAt(result.Count - 1);
+//         }
+//         return result;
+//     }
+//     string GetNeighbor(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var result = "";
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row < height - 1 && _field[column, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (column != 0 && _field[column - 1, row] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (column < width - 1 && _field[column + 1, row] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         return result;
+//     }
+//     string GetNeighbor2(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var result = "";
 
 
-    public static NeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
-    {
-        var neurons = arch.Split(',').Select(k => int.Parse(k)).ToArray();
-        Matrix[] result = new Matrix[neurons.Length - 1];
-        for (int i = 0; i < neurons.Length - 1; i++)
-        {
-            result[i] = Evolution.GetRandomMatrix(neurons[i], neurons[i + 1], min, max);
-        }
-        return new(result, delta, alpha);
-    }
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (column < width - 1 && _field[column + 1, row] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row < height - 1 && _field[column, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         if (column != 0 && _field[column - 1, row] != 0)
+//         {
+//             result += '.';
+//         }
+//         else
+//         {
+//             result += '-';
+//         }
+//         return result;
+//     }
+//     int GetNeighborCount(int column, int row, int cell)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] == cell)
+//         {
+//             count++;
+//         }
 
-    public Matrix this[int layer]
-    {
-        get => Matrices[layer];
-        set => Matrices[layer] = value;
-    }
-    public double this[int x, int y, int layer]
-    {
-        get => Matrices[layer][x, y];
-        set => Matrices[layer][x, y] = value;
-    }
-    public void CorrectAll(Func<NeuralNetwork, double> func)
-    {
-        for (int layer = 0; layer < Matrices.Length; layer++)
-        {
-            for (int y = 0; y < Matrices[layer].Y; y++)
-            {
-                for (int x = 0; x < Matrices[layer].X; x++)
-                {
-                    Correct(x, y, layer, func);
-                }
-            }
-        }
-    }
-    public void Correct(int x, int y, int layer, Func<NeuralNetwork, double> func)
-    {
-        var fx = func(this);
-        this[x, y, layer] += Delta;
-        var fxd = func(this);
-        this[x, y, layer] -= Delta;
-        this[x, y, layer] += (fx - fxd) * Alpha;
-        var fxr = func(this);
-        if (fxr > fx)
-        {
-            Alpha /= 2;
-        }
-    }
-    public void Write(string fileName, FileMode mode)
-    {
-        var file = File.Open(fileName, mode);
-        BinaryWriter writer = new BinaryWriter(file);
-        writer.Write(Delta);
-        writer.Write(Alpha);
-        writer.Write(Matrices.Length);
-        writer.Write(Matrices[0].X);
-        for (int layer = 0; layer < Matrices.Length; layer++)
-        {
-            writer.Write(Matrices[layer].Y);
-            for (int y = 0; y < Matrices[layer].Y; y++)
-            {
-                for (int x = 0; x < Matrices[layer].X; x++)
-                {
-                    writer.Write(this[x, y, layer]);
-                }
-            }
-        }
-        file.Close();
-    }
-    static public NeuralNetwork Read(string fileName, FileMode mode)
-    {
-        var file = File.Open(fileName, mode);
-        BinaryReader reader = new BinaryReader(file);
-        var delta = reader.ReadDouble();
-        var alpha = reader.ReadDouble();
-        var layerCount = reader.ReadInt32();
-        var width = reader.ReadInt32();
-        int height;
-        var result = new NeuralNetwork(new Matrix[layerCount], delta, alpha);
-        for (int layer = 0; layer < layerCount; layer++)
-        {
-            height = reader.ReadInt32();
-            result.Matrices[layer] = Matrix.Generate(width, height);
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    result[x, y, layer] = reader.ReadDouble();
-                }
-            }
-            width = height;
-        }
-        file.Close();
-        return result;
-    }
-}
-static class Activate
-{
-    public static readonly Func<double, double> Relu = x => x < 0 ? 0 : x;
-    public static readonly Func<double, double> Sigmoide = x => 1 / (1 + Exp(-x));
+//         if (row != 0 && _field[column, row - 1] == cell)
+//         {
+//             count++;
+//         }
 
-}
-class ConvolutionNeuralNetwork
-{
-    public ConvolutionNeuralNetwork(Matrix[] matrices, double delta = 0.01, double alpha = 1)
-    {
-        Matrices = matrices;
-        Delta = delta;
-        Alpha = alpha;
-    }
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] == cell)
+//         {
+//             count++;
+//         }
 
-    public Matrix[] Matrices { get; set; }
-    public double Delta { get; set; }
-    public double Alpha { get; private set; }
-    public static readonly Random _rng = new Random();
-    public Matrix Propagate(Matrix image)
-    {
-        var result = Matrix.Generate(image.X, image.Y, 0);
-        for (int i = 0; i < Matrices.Length; i++)
-        {
-            result = Convolution(result, Matrices[i]);
-        }
-        return result;
-    }
+//         if (column < width - 1 && _field[column + 1, row] == cell)
+//         {
+//             count++;
+//         }
 
-    public static Matrix Convolution(Matrix image, Matrix kernel)
-    {
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] == cell)
+//         {
+//             count++;
+//         }
 
-        unsafe
-        {
-            var result = Matrix.Generate(image.X - kernel.X + 1, image.Y - kernel.Y + 1);
-            for (int y = 0; y < result.Y; y++)
-            {
-                for (int x = 0; x < result.X; x++)
-                {
-                    var kernelRowBegin = 0;
-                    var sum = 0.0;
-                    for (int row = 0; row < kernel.Y; row++)
-                    {
-                        kernelRowBegin += kernel.X;
-                        var kernelRowBeginPtr = (double*)kernel.Pointer + kernelRowBegin;
-                        var imageRowBeginPtr = (double*)image.Pointer + (row + y) * image.X + x;
-                        for (int column = 0; column < kernel.X; column++)
-                        {
-                            kernelRowBeginPtr++;
-                            imageRowBeginPtr++;
-                            var v = *(kernelRowBeginPtr) * *(imageRowBeginPtr);
-                            sum += (v < 0 ? 0 : v);
-                        }
-                    }
-                    result[x, y] = sum;
-                }
-            }
-            return result;
-        }
-    }
-    public static ConvolutionNeuralNetwork GetRandomNetwork(int min, int max, string arch, double delta, double alpha)
-    {
-        var neurons = arch.Split(',', '*').Select(k => int.Parse(k)).ToArray();
-        Matrix[] result = new Matrix[neurons.Length / 2];
-        for (int i = 0; i < neurons.Length / 2; i++)
-        {
-            result[i] = Evolution.GetRandomMatrix(neurons[2 * i], neurons[2 * i + 1], min, max);
-        }
-        return new(result, delta, alpha);
-    }
+//         if (row < height - 1 && _field[column, row + 1] == cell)
+//         {
+//             count++;
+//         }
 
-    public Matrix this[int layer]
-    {
-        get => Matrices[layer];
-        set => Matrices[layer] = value;
-    }
-    public double this[int x, int y, int layer]
-    {
-        get => Matrices[layer][x, y];
-        set => Matrices[layer][x, y] = value;
-    }
-    public void CorrectAll(Func<ConvolutionNeuralNetwork, double> func)
-    {
-        for (int layer = 0; layer < Matrices.Length; layer++)
-        {
-            for (int y = 0; y < Matrices[layer].Y; y++)
-            {
-                for (int x = 0; x < Matrices[layer].X; x++)
-                {
-                    Correct(x, y, layer, func);
-                }
-            }
-        }
-    }
-    public void Correct(int x, int y, int layer, Func<ConvolutionNeuralNetwork, double> func)
-    {
-        var fx = func(this);
-        this[x, y, layer] += Delta;
-        var fxd = func(this);
-        this[x, y, layer] -= Delta;
-        this[x, y, layer] += (fx - fxd) * Alpha;
-        var fxr = func(this);
-        if (fxr > fx)
-        {
-            Alpha /= 2;
-        }
-    }
-    public void Write(string fileName, FileMode mode)
-    {
-        var file = File.Open(fileName, mode);
-        BinaryWriter writer = new BinaryWriter(file);
-        writer.Write(Delta);
-        writer.Write(Alpha);
-        writer.Write(Matrices.Length);
-        writer.Write(Matrices[0].X);
-        for (int layer = 0; layer < Matrices.Length; layer++)
-        {
-            writer.Write(Matrices[layer].Y);
-            for (int y = 0; y < Matrices[layer].Y; y++)
-            {
-                for (int x = 0; x < Matrices[layer].X; x++)
-                {
-                    writer.Write(this[x, y, layer]);
-                }
-            }
-        }
-        file.Close();
-    }
-    static public ConvolutionNeuralNetwork Read(string fileName, FileMode mode)
-    {
-        var file = File.Open(fileName, mode);
-        BinaryReader reader = new BinaryReader(file);
-        var delta = reader.ReadDouble();
-        var alpha = reader.ReadDouble();
-        var layerCount = reader.ReadInt32();
-        var width = reader.ReadInt32();
-        int height;
-        var result = new ConvolutionNeuralNetwork(new Matrix[layerCount], delta, alpha);
-        for (int layer = 0; layer < layerCount; layer++)
-        {
-            height = reader.ReadInt32();
-            result.Matrices[layer] = Matrix.Generate(width, height);
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    result[x, y, layer] = reader.ReadDouble();
-                }
-            }
-            width = height;
-        }
-        file.Close();
-        return result;
-    }
-}
-public class Evolution
-{
-    static Random Random { get; } = new Random();
-    public static Matrix GetRandomMatrix(int x, int y, double min, double max)
-    {
-        var matrix = Matrix.Generate(x, y);
-        for (int row = 0; row < y; row++)
-        {
-            for (int column = 0; column < x; column++)
-            {
-                matrix[column, row] = Random.NextDouble() * (max - min) + min;
-            }
-        }
-        return matrix;
-    }
-}
-class OscillateDot
-{
-    public OscillateDot(double x, double y)
-    {
-        X = x;
-        Y = y;
-    }
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] == cell)
+//         {
+//             count++;
+//         }
 
-    public double X { get; set; }
-    public double Y { get; set; }
-    public void Next(int[,] proj)
-    {
-        proj[(int)(X + 400), (int)(Abs(Y + 400))] = 127;
-        X += (Y + Sqrt(X * X + Y * Y) * 0.99) * 0.01;
-        Y -= X * 0.01;
-        proj[(int)(Abs(X + 400)), (int)(Abs(Y + 400))] = 255;
-    }
-}
-class LorenzDot
-{
-    public LorenzDot(double x, double y, double z, double dt = 0.001)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-        Dt = dt;
-    }
+//         if (column != 0 && _field[column - 1, row] == cell)
+//         {
+//             count++;
+//         }
 
-    public double X { get; set; }
-    public double Y { get; set; }
-    public double Z { get; set; }
-    public double Dt { get; }
+//         return count;
+//     }
+//     int GetNeighborCount2(int column, int row, int cell)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && _field[column, row - 1] == cell)
+//         {
+//             count++;
+//         }
 
-    public void Next(int[,] proj)
-    {
-        //proj[(int)(X + 400), (int)(Abs(Y + 400))] = 0;
-        X += 100 * (Y - X) * Dt;
-        Y += (X * (28 - Z) - Y) * Dt;
-        Z += (X * Y + Z * 8 / 3) * Dt;
-        proj[(int)(Abs(X + 400)), (int)(Abs(Y + 400))] = 255;
-    }
-}
-class Noise
-{
-    public Noise(int freq, Random random)
-    {
-        Dots = new double[freq];
-        Dots = Dots.Select(a => random.NextDouble()).ToArray();
-    }
-    public double Function(double value)
-    {
-        return Dots.Select((x, n) => x * Exp(-(value - n) * (value - n))).Sum();
-    }
-    double[] Dots;
-}
-class Noise2D
-{
-    public Noise2D(int freq, Random random)
-    {
-        Dots = new double[freq][];
-        for (int i = 0; i < freq; i++)
-        {
-            var rand = new double[freq];
-            rand = rand.Select(a => random.NextDouble()).ToArray();
-            Dots[i] = rand;
-        }
-        Freq = freq;
-    }
-    public double Function(double x, double y)
-    {
-        var sum = 0.0;
-        for (int row = 0; row < Freq; row++)
-        {
-            for (int column = 0; column < Freq; column++)
-            {
-                var dx = column - x;
-                var dy = row - y;
-                sum += Exp(-(dx * dx + dy * dy)) * Dots[column][row];
-            }
-        }
-        return sum;
-    }
-    double[][] Dots;
+//         if (column < width - 1 && _field[column + 1, row] == cell)
+//         {
+//             count++;
+//         }
 
-    public int Freq { get; }
-}
-//⌘
+//         if (row < height - 1 && _field[column, row + 1] == cell)
+//         {
+//             count++;
+//         }
+
+//         if (column != 0 && _field[column - 1, row] == cell)
+//         {
+//             count++;
+//         }
+
+//         return count;
+//     }
+//     int GetHexNeighborCount(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] != 0)
+//         {
+//             // count++;
+//         }
+
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column != 0 && _field[column - 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         return count;
+//     }
+
+//     int GetNeighborCount2(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && _field[column, row - 1] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] != 0)
+//         {
+//             count++;
+//         }
+
+
+//         if (column != 0 && _field[column - 1, row] != 0)
+//         {
+//             count++;
+//         }
+
+//         return count;
+//     }
+//     int NeighborAsGreenCell(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] == 3)
+//         {
+//             _field[column - 1, row - 1] = 4;
+//         }
+
+//         if (row != 0 && _field[column, row - 1] == 3)
+//         {
+//             _field[column, row - 1] = 4;
+//         }
+
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] == 3)
+//         {
+//             _field[column + 1, row - 1] = 4;
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] == 3)
+//         {
+//             _field[column + 1, row] = 4;
+//         }
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] == 3)
+//         {
+//             _field[column + 1, row + 1] = 4;
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] == 3)
+//         {
+//             _field[column, row + 1] = 4;
+//         }
+
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] == 3)
+//         {
+//             _field[column - 1, row + 1] = 4;
+//         }
+
+//         if (column != 0 && _field[column - 1, row] == 3)
+//         {
+//             _field[column - 1, row] = 4;
+//         }
+
+//         return count;
+//     }
+//     void Evolution(object? sender, EventArgs args)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var newField = new int[width, height];
+//         for (int row = 0; row < height; row++)
+//         {
+//             for (int column = 0; column < width; column++)
+//             {
+//                 switch (_rules)
+//                 {
+//                     case Rules.Conway:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count == 2 || count == 3)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count == 3)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+
+//                     case Rules.Avgust:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] == 0)
+//                             {
+//                                 if (count == 2)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+
+//                     case Rules.Ulam:
+//                         {
+//                             var count = GetNeighborCount2(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (_field[column, row] < 3)
+//                                 {
+//                                     _field[column, row] += 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count == 1)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.HighLife:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count == 2 || count == 3)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count is 3 or 6)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.AvgustConway:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (count == 2)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count == 2 || count == 3)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.LifeWithoutDead:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                             else
+//                             {
+//                                 if (count == 3)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.DayAndNight:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count is 3 or 4 or 6 or 7 or 8)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count is 3 or 6 or 7 or 8)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Avgust2:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                             }
+//                             else
+//                             {
+//                                 if (count == 2 || count == 4)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Wind:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                             }
+//                             else
+//                             {
+//                                 if (count is 3 || column != 0 && _field[column - 1, row] != 0)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.StableLife:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count is 2 or 3 or 4 or 8)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count == 3)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+
+//                         }
+//                     case Rules.NotStableLife:
+//                         {
+//                             var count = GetNeighborCount(column, row);
+//                             if (_field[column, row] != 0)
+//                             {
+//                                 if (count is 2 or 4 or 5)
+//                                 {
+//                                     newField[column, row] = _field[column, row] + 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 if (count is 3 or 5)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Replace:
+//                         {
+//                             _field[column, row] = ((int)(GetNeighborCount(column, row) % 2));
+//                             break;
+//                         }
+//                     case Rules.HardLife:
+//                         {
+//                             int NeighborCount(int cell)
+//                             {
+//                                 return GetNeighborCount(column, row, cell);
+//                             }
+
+//                             if (_field[column, row] == 3)
+//                             {
+//                                 var leftAndRightExpand = true;
+//                                 if (column != 0 && _field[column - 1, row] == 0)
+//                                 {
+//                                     _field[column - 1, row] = 3;
+//                                 }
+//                                 else
+//                                 {
+//                                     leftAndRightExpand = false;
+//                                 }
+//                                 if (column != _field.GetLength(0) && _field[column + 1, row] == 0)
+//                                 {
+//                                     newField[column + 1, row] = 3;
+//                                 }
+//                                 else
+//                                 {
+//                                     leftAndRightExpand = false;
+//                                 }
+//                                 var upExpand = true;
+//                                 if (leftAndRightExpand && row != 0 && _field[column, row - 1] == 0)
+//                                 {
+//                                     newField[column, row - 1] = 3;
+//                                 }
+//                                 else
+//                                 {
+//                                     upExpand = false;
+//                                 }
+//                                 if (!upExpand && row != _field.GetLength(1) && _field[column, row + 1] == 0)
+//                                 {
+//                                     newField[column, row + 1] = 3;
+//                                 }
+//                             }
+//                             if (_field[column, row] == 4)
+//                             {
+//                                 NeighborAsGreenCell(column, row);
+//                                 if (NeighborCount(4) == 0)
+//                                 {
+//                                     newField[column, row] = 0;
+//                                 }
+//                             }
+//                             if (_field[column, row] == 1)
+//                             {
+//                                 if (NeighborCount(2) > 2)
+//                                 {
+//                                     newField[column, row] = 0;
+//                                 }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Lines:
+//                         if (GetNeighborCount2(column, row) == 1)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         if (_field[column, row] != 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.Bomb:
+//                         if (GetNeighborCount(column, row) == 1)
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                             break;
+//                         }
+//                         if (_field[column, row] != 0)
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                         break;
+//                     case Rules.Triangle:
+
+//                         if (GetNeighborCount3(column, row) == 1)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         if (_field[column, row] != 0)
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                         break;
+//                     case Rules.SeedsWithoutDead:
+//                         if (_field[column, row] != 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         if (GetNeighborCount(column, row) == 2)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.Dragon:
+//                         if (_field[column, row] != 0)
+//                         {
+//                             if (GetNeighborCount(column, row) is 0 or 1 or 8)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                         }
+//                         else
+//                         {
+//                             if (GetNeighborCount(column, row) is 3 or 4)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
+//                     case Rules.Circle:
+//                         var next = (_field[column, row] + 1) % 5;
+//                         if (GetNeighborCount(column, row, next) > 1 + _rng.Next(2))
+//                         {
+//                             newField[column, row] = next;
+//                             break;
+//                         }
+//                         else
+//                         {
+//                             newField[column, row] = _field[column, row];
+//                         }
+//                         break;
+//                     case Rules.SeedsLight:
+//                         if (GetNeighborCount(column, row) is 1 or 2 && _field[column, row] != 0)
+//                         {
+//                             newField[column, row] = _field[column, row]++;
+//                         }
+//                         else if (GetNeighborCount(column, row) is 2 && (!GetNeighbor(column, row).Contains("..") && !GetNeighbor2(column, row).Contains("..")) && _field[column, row] == 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.BigLife:
+//                         if (_field[column, row] != 0)
+//                         {
+//                             if (GetNeighborCount(column, row) is 2 or 3 or 4)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                         }
+//                         else
+//                         {
+//                             if (GetNeighborCount(column, row) is 4 or 5 or 6)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
+//                     case Rules.Fire:
+//                         if (_field[column, row] != 0)
+//                         {
+//                             if (GetNeighborCount(column, row) is 0 or 1 or 2 or 8 or 3)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                         }
+//                         else
+//                         {
+//                             if (GetNeighbor(column, row).Contains("-.d..d-") || GetNeighbor2(column, row).Contains("-.d..d-"))
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
+//                     case Rules.Replicator:
+//                         if (_field[column, row] != 0)
+//                         {
+//                             if (GetNeighborCount(column, row) is 1 or 3 or 5 or 7)
+//                             {
+//                                 newField[column, row] = _field[column, row] + 1;
+//                             }
+//                         }
+//                         else
+//                         {
+//                             if (GetNeighborCount(column, row) is 1 or 3 or 5 or 7)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
+//                     case Rules.Bombplicator:
+//                         if (GetNeighborCount(column, row) is 2 or 3 && _field[column, row] != 0)
+//                         {
+//                             newField[column, row] = _field[column, row]++;
+//                         }
+//                         else if (GetNeighborCount(column, row) is 3 || (GetNeighborCount(column, row) is 4 && (GetNeighbor(column, row).Contains("..-..") || GetNeighbor2(column, row).Contains("..-..")) && _field[column, row] == 0))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.HexSeeds:
+//                         {
+//                             if (_field[column, row] == 0)
+//                             {
+//                                 if (GetHexNeighborCount(column, row) is 2 or 3)
+//                                 {
+//                                     newField[column, row] = 1;
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 // if (GetHexNeighborCount(column, row))
+//                                 // {
+//                                 //     newField[column, row] = _field[column, row];
+//                                 // }
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Rakes:
+//                         {
+//                             string neighbor = GetNeighbor(column, row);
+//                             string neighbor2 = GetNeighbor2(column, row);
+//                             if (GetNeighborCount(column, row) is 0 && _field[column, row] != 0)
+//                             {
+//                                 newField[column, row] = _field[column, row];
+//                             }
+//                             else if (neighbor.Contains("..") || neighbor2.Contains("..") || (GetNeighborCount2(column, row) == 2 && neighbor.Contains(".-.") || neighbor2.Contains(".-.")) || neighbor.Contains("..--.") | neighbor2.Contains("..--.") && _field[column, row] == 0)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                             break;
+//                         }
+//                     case Rules.Brain:
+//                         if (_field[column, row] == 0 && GetNeighborCount4(column, row) == 2)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         if (_field[column, row] == 1)
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         if (_field[column, row] == 2)
+//                         {
+//                             newField[column, row] = 0;
+//                         }
+//                         break;
+//                     case Rules.Cross:
+//                         if (_field[column, row] == 1)
+//                         {
+//                             if (GetNeighborCount(column, row, 3) > 1)
+//                             {
+//                                 newField[column, row] = 3;
+//                                 break;
+//                             }
+//                             if (GetNeighborCount2(column, row, 1) is 0 or 1 or 2)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 0)
+//                         {
+//                             if (GetNeighborCount2(column, row) is 1 && GetNeighborCount(column, row) is 1)
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 2)
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         break;
+//                     case Rules.Wireworld:
+//                         if (_field[column, row] == 1)
+//                         {
+//                             if (GetNeighborCount(column, row, 2) is 1 or 2)
+//                             {
+//                                 newField[column, row] = 2;
+//                             }
+//                             else
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 2)
+//                         {
+//                             if (GetNeighborCount(column, row, 3) < 2)
+//                             {
+//                                 newField[column, row] = 3;
+//                             }
+//                             else
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         if (_field[column, row] == 3)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case Rules.LogicRule:
+//                         if (_field[column, row] == 0)
+//                         {
+//                             if ((GetNeighbor(column, row).Contains("..") || GetNeighbor2(column, row).Contains("..")) && GetNeighborCount(column, row) == 2 || (GetNeighborCount2(column, row) == 2 && GetNeighborCount(column, row) == 2 && (GetNeighbor(column, row).Contains(".-.") || GetNeighbor2(column, row).Contains(".-."))))
+//                             {
+//                                 newField[column, row] = 1;
+//                             }
+//                         }
+//                         break;
+//                 }
+
+//             }
+//         }
+
+//         _field = newField;
+//     }
+//     void NeighborhoodActivate(int column, int row, Action<int> action)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         if (row > 0 && column > 0 && _field[column - 1, row - 1] == 3)
+//         {
+//             action(_field[column - 1, row - 1]);
+//         }
+
+//         if (row > 0 && _field[column, row - 1] == 3)
+//         {
+//             action(_field[column, row - 1]);
+//         }
+
+//         if (row > 0 && column < width - 1 && _field[column + 1, row - 1] == 3)
+//         {
+//             action(_field[column + 1, row - 1]);
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] == 3)
+//         {
+//             action(_field[column + 1, row]);
+//         }
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] == 3)
+//         {
+//             action(_field[column + 1, row + 1]);
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] == 3)
+//         {
+//             action(_field[column, row + 1]);
+//         }
+
+//         if (row < height - 1 && column > 0 && _field[column - 1, row + 1] == 3)
+//         {
+//             action(_field[column - 1, row + 1]);
+//         }
+
+//         if (column > 0 && _field[column - 1, row] == 3)
+//         {
+//             action(_field[column - 1, row]);
+//         }
+//     }
+//     public void Evolution(string birth, string survival)
+//     {
+//         for (int i = 0; i < 10; i++)
+//         {
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
+//             {
+//                 for (int column = 0; column < width; column++)
+//                 {
+//                     if (_field[column, row] != 0)
+//                     {
+//                         if (IsContains(survival, column, row))
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                     }
+//                     else
+//                     {
+//                         if (IsContains(birth, column, row))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                     }
+//                 }
+
+//             }
+//             _field = newField;
+//         }
+
+//     }
+//     public void Evolution2(object? sender, EventArgs args)
+//     {
+//         for (int i = 0; i < 1; i++)
+//         {
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
+//             {
+//                 for (int column = 0; column < width; column++)
+//                 {
+//                     if (_field[column, row] != 0)
+//                     {
+//                         if (Contains(_survival, (int)GetNeighborCount(column, row)))
+//                         {
+//                             newField[column, row] = _field[column, row] + 1;
+//                         }
+//                     }
+//                     else
+//                     {
+//                         if (Contains(_birth, (int)GetNeighborCount(column, row)))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                     }
+//                 }
+//             }
+//             _field = newField;
+//         }
+
+//     }
+//     public bool Contains(int[] array, int value)
+//     {
+//         var result = false;
+//         foreach (var item in array)
+//         {
+//             result |= (item == value);
+//         }
+//         return result;
+//     }
+//     public void Evolution3(object? sender, EventArgs args)
+//     {
+//         for (int i = 0; i < 1; i++)
+//         {
+//             var width = _field.GetLength(0);
+//             var height = _field.GetLength(1);
+//             var newField = new int[width, height];
+//             for (int row = 0; row < height; row++)
+//             {
+//                 for (int column = 0; column < width; column++)
+//                 {
+//                     if (_field[column, row] != 0)
+//                     {
+//                         if (Contains(_survival, (int)GetNeighborCount(column, row)))
+//                         {
+//                             newField[column, row] = _field[column, row];
+//                         }
+//                         else
+//                         {
+//                             newField[column, row] = _field[column, row];
+
+//                         }
+//                     }
+//                     else
+//                     {
+//                         if (Contains(_birth, (int)GetNeighborCount(column, row)) && _field[column, row] == 0)
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                     }
+//                 }
+//             }
+//             _field = newField;
+//         }
+
+//     }
+//     public void EvolutionBSFKL(object? sender, EventArgs args)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var newField = new int[width, height];
+//         for (int row = 0; row < height; row++)
+//         {
+//             for (int column = 0; column < width; column++)
+//             {
+//                 switch (_field[column, row])
+//                 {
+//                     case 0:
+//                         if (Contains(_birth, GetNeighborCount(column, row, 1)) && Contains(_f, GetNeighborCount(column, row, 2)))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         break;
+//                     case 1:
+//                         if (Contains(_survival, GetNeighborCount(column, row, 1)) && !Contains(_k, GetNeighborCount(column, row, 2)))
+//                         {
+//                             newField[column, row] = 1;
+//                         }
+//                         else
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         break;
+//                     case 2:
+//                         if (!Contains(_l, GetNeighborCount(column, row, 1)))
+//                         {
+//                             newField[column, row] = 2;
+//                         }
+//                         break;
+//                 }
+//             }
+//         }
+//         _field = newField;
+//     }
+//     private bool[,] GetBitmap()
+//     {
+//         var result = new bool[_field.GetLength(0), _field.GetLength(1)];
+//         for (int i = 0; i < _field.GetLength(0) - 1; i++)
+//         {
+//             for (int j = 0; j < _field.GetLength(1) - 1; j++)
+//             {
+//                 result[i, j] = _field[i, j] != 0;
+//             }
+//         }
+//         return result;
+//     }
+
+//     void DrawField2()
+//     {
+//         Console.CursorLeft = 0;
+//         Console.CursorTop = 0;
+//         for (int row = 0; row < _field.GetLength(1); row++)
+//         {
+//             for (int column = 0; column < _field.GetLength(0); column++)
+//             {
+//                 char print = '.';
+//                 switch (_field[column, row])
+//                 {
+//                     case 0:
+//                         break;
+//                     case 2:
+//                         Console.ForegroundColor = ConsoleColor.Magenta;
+//                         break;
+//                     case 3:
+//                         Console.ForegroundColor = ConsoleColor.Blue;
+//                         break;
+//                     case 4:
+//                         Console.ForegroundColor = ConsoleColor.Green;
+//                         break;
+//                     case 5:
+//                         Console.ForegroundColor = ConsoleColor.Yellow;
+//                         break;
+//                     case 6:
+//                         Console.ForegroundColor = ConsoleColor.Red;
+//                         break;
+//                 }
+//                 Console.Write(print);
+//                 Console.ForegroundColor = ConsoleColor.White;
+//             }
+//             Console.WriteLine();
+//         }
+//         Console.CursorLeft = _x;
+//         Console.CursorTop = _y;
+//     }
+//     void OnRandom(double probability, int cell)
+//     {
+//         var rng = new Random();
+//         for (int row = (int)(_a * _field.GetLength(1)); row < _b * _field.GetLength(1); row++)
+//         {
+//             for (int column = (int)(_a * _field.GetLength(0)); column < _b *_field.GetLength(0); column++)
+//             {
+//                 if (rng.NextDouble() < probability)
+//                 {
+//                     _field[column, row] = cell;
+//                 }
+//             }
+//         }
+//     }
+//     void Line(int iBegin, int jBegin, int length)
+//     {
+//         for (int i = 0; i < length; i++)
+//         {
+//             _field[iBegin + i, jBegin] = 1;
+//         }
+//     }
+//     int GetNeighborCount4(int column, int row)
+//     {
+//         var width = _field.GetLength(0);
+//         var height = _field.GetLength(1);
+//         var count = 0;
+//         if (row != 0 && column != 0 && _field[column - 1, row - 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (row != 0 && _field[column, row - 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (row != 0 && column < width - 1 && _field[column + 1, row - 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && _field[column + 1, row] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (column < width - 1 && row < height - 1 && _field[column + 1, row + 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && _field[column, row + 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (row < height - 1 && column != 0 && _field[column - 1, row + 1] == 1)
+//         {
+//             count++;
+//         }
+
+//         if (column != 0 && _field[column - 1, row] == 1)
+//         {
+//             count++;
+//         }
+
+//         return count;
+//     }
+//     public bool IsContains(string s, int column, int row)
+//     {
+//         return GetNeighbor(column, row).Contains(s) || GetNeighbor2(column, row).Contains(s) || s.Contains(GetNeighborCount(column, row).ToString());
+//     }
+// }

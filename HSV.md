@@ -1,2 +1,0 @@
-<!-- $${\displaystyle F_{j}(x)={\frac {1}{\Gamma (j+1)}}\int _{0}^{\infty }{\frac {t^{j}}{e^{t-x}+1}}\,dt.} -->
-$${\hat  {f}}(\omega )={\frac  {1}{{\sqrt  {2\pi }}}}\int \limits _{{-\infty }}^{{\infty }}f(x)e^{{-ix\omega }}\,dx.
