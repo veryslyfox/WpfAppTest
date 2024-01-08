@@ -100,16 +100,16 @@ static class SpecialMath
         var a = k / n * 2 * Math.PI;
         return (x - Sin(a)) * (x - Sin(a)) + (y - Cos(a)) * (y - Cos(a));
     }
-    public static int DotFromMandelbrotSet(double x, double y, double k)
+    public static byte DotFromMandelbrotSet(double x, double y, double k)
     {
         var c = new Complex(0, 0);
         var a = new Complex(x, y);
         for (int i = 0; i < k; i++)
         {
             c = c * c + a;
-            if (c.Magnitude > 1)
+            if (c.Magnitude > 2)
             {
-                return (int)(k - i);
+                return (byte)(k - i);
             }
         }
         return 0;

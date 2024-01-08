@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows.Media;
 
 namespace WpfApp1;
@@ -39,25 +40,4 @@ public struct Vector2
     public static Vector2 operator +(Vector2 left, Vector2 right) => new(left.X + right.X, left.Y + right.Y);
 
     public static Vector2 operator *(Vector2 left, double right) => new(left.X * right, left.Y * right);
-}
-sealed class Particle2
-{
-    public Particle2(double x, double y, double velocityX, double velocityY)
-    {
-        X = x;
-        Y = y;
-        VelocityX = velocityX;
-        VelocityY = velocityY;
-    }
-
-    public double X { get; set; }
-    public double Y { get; set; }
-    public double VelocityX { get; }
-    public double VelocityY { get; }
-
-    public void Next()
-    {
-        X += VelocityX;
-        Y += VelocityY;
-    }
 }

@@ -19,13 +19,17 @@ class Rect
     public int Y1 { get; }
     public int X2 { get; }
     public int Y2 { get; }
-    static bool LineCollide(int start1, int end1, int start2, int end2)
+    static bool IsLineCollide(int start1, int end1, int start2, int end2)
     {
         return !((start1 < start2) ^ (end1 < end2));
     }
-    public static bool Collide(Rect a, Rect b)
+    static bool GetLineCollision(int start1, int end1, int start2, int end2)
     {
-        return LineCollide(a.X1, a.X2, b.X1, b.X2) | LineCollide(a.Y1, a.Y2, b.Y1, b.Y2);
+        return !((start1 < start2) ^ (end1 < end2));
+    }
+    public static bool IsCollide(Rect a, Rect b)
+    {
+        return IsLineCollide(a.X1, a.X2, b.X1, b.X2) | IsLineCollide(a.Y1, a.Y2, b.Y1, b.Y2);
     }
 }
 class Level
@@ -41,7 +45,7 @@ class Level
         var result = new List<LevelElement>();
         foreach (var item in Field)
         {
-            if (Rect.Collide(LevelElement.GetHitbox(item), cameraPosition))
+            if (Rect.IsCollide(item.GetHitbox(), cameraPosition))
             {
                 result.Add(item);
             }
@@ -51,7 +55,6 @@ class Level
 }
 enum LevelElementType
 {
-    Empty,
     Block,
     Spike
 }
@@ -65,18 +68,19 @@ class LevelElement
     }
     public Rect GetHitbox()
     {
-        return new Rect(this.X, this.Y, this.X + Params.CellSize, this.Y + Params.CellSize);
+        return new Rect(X, Y, X + Params.CellSize, Y + Params.CellSize);
     }
     public Color GetColor()
     {
         switch (Type)
         {
-            case LevelElementType.Empty:
-                return 
-
+            case LevelElementType.Block:
+                return Color.FromRgb(255, 255, 255);
+            case LevelElementType.Spike:
+                return Color.FromRgb(255, 0, 0);
         }
-
-        return Color.FromRgb(0, 0, 0);
+        Test.Log("Error 000: invalid object");
+        return Color.FromRgb(255, 255, 0);
     }
     public LevelElementType Type { get; }
     public int X { get; }
@@ -85,21 +89,16 @@ class LevelElement
 static class Drawing
 {
     public static Color[,] Image;
-    public static void Draw(LevelElement element)
+    public static void DrawRect(Rect rect, Color color)
     {
         var height = Image.GetLength(0);
         var width = Image.GetLength(1);
-        var hitbox = element.GetHitbox();
-        for (int y = hitbox.Y1; y <= hitbox.Y2; y++)
+        for (int y = rect.Y1; y <= rect.Y2; y++)
         {
-            for (int x = hitbox.X1; x <= hitbox.X2; x++)
+            for (int x = rect.X1; x <= rect.X2; x++)
             {
-                
+                Image[x, y] = color;
             }
         }
     }
-}
-static class Test
-{
-    
 }
