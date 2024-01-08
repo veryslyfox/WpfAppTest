@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     {
         for (int i = 0; i < _points.Points.Length; i++)
         {
-            _points.Points[i] = new Point3(_rng.Next(300, 500), _rng.Next(300, 500), _rng.Next(300, 500));
+            _points.Points[i] = new Point3(_rng.Next(-100, 100), _rng.Next(-100, 100), _rng.Next(-100, 100));
         }
         _image = new Color[1000, 1000];
         InitializeComponent();
@@ -72,8 +72,7 @@ public partial class MainWindow : Window
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
-        _points.Draw(_bitmap, new Matrix3(1, 0, 0, 0, 1 + _f/100000.0, 0, 0, 0, 1, 0, 0, 0), 255, 255, 255);
-
+        _points.Draw(_bitmap, new Matrix3(1 + _f / 2000.0, 0, 0, 0, 1 + _f / 2000.0, 0, 0, 0, 1 + _f / 2000.0, 500, 500, 500), 255, 255, 255);
         // for (int y = 0; y < _bitmap.PixelHeight; y++)
         // {
         //     for (int x = 0; x < _bitmap.PixelWidth; x++)
@@ -239,24 +238,41 @@ class Matrix3
     {
         return new((int)Math.Round(point.X * matrix.M11 + point.Y * matrix.M12 + point.Z * matrix.M13 + matrix.V1), (int)Math.Round(point.X * matrix.M21 + point.Y * matrix.M22 + point.Z * matrix.M23 + matrix.V2), (int)Math.Round(point.X * matrix.M31 + point.Y * matrix.M32 + point.Z * matrix.M33 + matrix.V3));
     }
-    // public static Matrix3 operator *(Matrix )
-//     (
-//     x
-//     1 0 0
-//     0 cos a -sin a
-//     0 sin a cos a
-//     y
-//     cos a 0 sin a
-//     0 1 0
-//     -sin a 0 cos a
-//     z
-//     cos a -sin a 0
-//     sin a cos a 0
-//     0 0 1
-// )
-
-    public static Matrix GetRotateMatrix(double x, double y, double z)
+    public static Matrix3 operator *(Matrix3 left, Matrix3 right)
     {
-        
+        return new(
+left.M11 * right.M11 + left.M21 * right.M12 + left.M31 * right.M13,
+left.M11 * right.M21 + left.M21 * right.M22 + left.M31 * right.M23,
+left.M11 * right.M31 + left.M21 * right.M32 + left.M31 * right.M33,
+left.M12 * right.M11 + left.M22 * right.M12 + left.M32 * right.M13,
+left.M12 * right.M21 + left.M22 * right.M22 + left.M32 * right.M23,
+left.M12 * right.M31 + left.M22 * right.M32 + left.M32 * right.M33,
+left.M13 * right.M11 + left.M23 * right.M12 + left.M33 * right.M13,
+left.M13 * right.M21 + left.M23 * right.M22 + left.M33 * right.M23,
+left.M13 * right.M31 + left.M23 * right.M32 + left.M33 * right.M33,
+left.V1 + right.V1,
+left.V2 + right.V2,
+left.V3 + right.V3
+);
+
     }
+    //     (
+    //     x
+    //     1 0 0
+    //     0 cos a -sin a
+    //     0 sin a cos a
+    //     y
+    //     cos a 0 sin a
+    //     0 1 0
+    //     -sin a 0 cos a
+    //     z
+    //     cos a -sin a 0
+    //     sin a cos a 0
+    //     0 0 1
+    // )
+
+    // public static Matrix GetRotateMatrix(double x, double y, double z)
+    // {
+
+    // }
 }
