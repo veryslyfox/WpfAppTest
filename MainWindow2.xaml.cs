@@ -17,12 +17,12 @@ public partial class MainWindow : Window
     private readonly Random _rng = new();
     private int _f;
     private Color[,] _image;
-    private Point3Collection _points = new(new Point3[100]);
+    private Point3Collection _points = new(new Point3[10000]);
     public MainWindow()
     {
         for (int i = 0; i < _points.Points.Length; i++)
         {
-            _points.Points[i] = new Point3(_rng.Next(-200, 200), _rng.Next(-200, 200), _rng.Next(-200, 200));
+            _points.Points[i] = new Point3(_rng.Next(-200, 200), _rng.Next(-200, 200), _rng.Next(-200, 200), _rng.Next(16777216));
         }
         _image = new Color[1000, 1000];
         InitializeComponent();
@@ -72,7 +72,14 @@ public partial class MainWindow : Window
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
-        _points.Draw(_bitmap, Matrix3.GetRotateMatrix(0, _f / 2000.0, _f / 2000.0, 400, 400, 400), 255, 255, 255);
+        // if (_f % 100 == 0)
+        // {
+        //     unsafe
+        //     {
+        //         System.Runtime.InteropServices.NativeMemory.Fill((void*)_bitmap.BackBuffer, (nuint)(_bitmap.BackBufferStride * _bitmap.PixelHeight), 0);
+        //     }
+        // }
+        _points.Draw(_bitmap, Matrix3.GetRotateMatrix(0, _f / 1000.0, _f / 1000.0, 400, 400, 400), 255, 255, 255);
         // for (int y = 0; y < _bitmap.PixelHeight; y++)
         // {
         //     for (int x = 0; x < _bitmap.PixelWidth; x++)
@@ -85,7 +92,7 @@ public partial class MainWindow : Window
         //         }
         //     }
         // }
-        _f += 1;
+        _f++;
         _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
         _bitmap.Unlock();
     }
@@ -187,22 +194,24 @@ class Point3Collection
         {
             var newPoint = point * matrix;
             var ptr = bitmap.BackBuffer + newPoint.X * 4 + bitmap.BackBufferStride * newPoint.Y;
-            *((int*)ptr) = ((r << 16) | (g << 8) | b);
+            *((int*)ptr) = point.Color;
         }
     }
     public Point3[] Points { get; }
 }
 struct Point3
 {
-    public Point3(int x, int y, int z)
+    public Point3(int x, int y, int z, int color = 0)
     {
         X = x;
         Y = y;
         Z = z;
+        Color = color;
     }
     public int X { get; }
     public int Y { get; }
     public int Z { get; }
+    public int Color;
 }
 class Matrix3
 {
