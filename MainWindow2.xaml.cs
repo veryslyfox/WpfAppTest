@@ -17,12 +17,12 @@ public partial class MainWindow : Window
     private readonly Random _rng = new();
     private int _f;
     private Color[,] _image;
-    private Point3Collection _points = new(new Point3[1000]);
+    private Point3Collection _points = new(new Point3[100]);
     public MainWindow()
     {
         for (int i = 0; i < _points.Points.Length; i++)
         {
-            _points.Points[i] = new Point3(_rng.Next(-100, 100), _rng.Next(-100, 100), _rng.Next(-100, 100));
+            _points.Points[i] = new Point3(_rng.Next(-200, 200), _rng.Next(-200, 200), _rng.Next(-200, 200));
         }
         _image = new Color[1000, 1000];
         InitializeComponent();
@@ -72,7 +72,7 @@ public partial class MainWindow : Window
     private void Tick(object? sender, EventArgs e)
     {
         _bitmap.Lock();
-        _points.Draw(_bitmap, new Matrix3(1 + _f / 2000.0, 0, 0, 0, 1 + _f / 2000.0, 0, 0, 0, 1 + _f / 2000.0, 500, 500, 500), 255, 255, 255);
+        _points.Draw(_bitmap, Matrix3.GetRotateMatrix(0, _f / 2000.0, _f / 2000.0, 400, 400, 400), 255, 255, 255);
         // for (int y = 0; y < _bitmap.PixelHeight; y++)
         // {
         //     for (int x = 0; x < _bitmap.PixelWidth; x++)
@@ -262,17 +262,23 @@ left.V3 + right.V3
     //     0 cos a -sin a
     //     0 sin a cos a
     //     y
-    //     cos a 0 sin a
+    //     cos y 0 sin y
     //     0 1 0
-    //     -sin a 0 cos a
+    //     -sin y 0 cos y
     //     z
-    //     cos a -sin a 0
-    //     sin a cos a 0
+    //     cos z -sin z 0
+    //     sin z cos z 0
     //     0 0 1
     // )
 
-    // public static Matrix GetRotateMatrix(double x, double y, double z)
-    // {
-
-    // }
+    public static Matrix3 GetRotateMatrix(double x, double y, double z, double offsetX = 0, double offsetY = 0, double offsetZ = 0)
+    {
+        var sx = Math.Sin(x);
+        var sy = Math.Sin(y);
+        var sz = Math.Sin(z);
+        var cx = Math.Cos(x);
+        var cy = Math.Cos(y);
+        var cz = Math.Cos(z);
+        return new Matrix3(1, 0, 0, 0, cx, -sx, 0, sx, cx, offsetX, offsetY, offsetZ) * new Matrix3(cy, 0, sy, 0, 1, 0, -sy, 0, cy, 0, 0, 0) * new Matrix3(cz, -sz, 0, sz, cz, 0, 0, 0, 1, 0, 0, 0);
+    }
 }
